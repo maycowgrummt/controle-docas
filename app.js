@@ -8,6 +8,46 @@ const kpiDocas = document.getElementById("kpi-docas");
 const kpiPedidos = document.getElementById("kpi-pedidos");
 const kpiCubagem = document.getElementById("kpi-cubagem");
 
+// --- Configuração do JSONBin.io ---
+const JSONBIN_ID = "6aede7adffd5d16053ac4cbb";
+const JSONBIN_KEY = "$2a$10$NoRCHe7AN8E83aWAYYlLjezhxxRQIK.SgXLTxNAU.3kACcz3S3SCO"; // Access Key com permissão Read + Update
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+const CHAVE_CACHE = "darnel_dados_docas"; // cópia local usada apenas como reserva (se ficar sem internet)
+
+// Se você usar a Master Key em vez da Access Key, troque "X-Access-Key" por "X-Master-Key"
+function cabecalhosJsonBin(comCorpo) {
+  const h = { "X--Key": JSONBIN_KEY };
+  if (comCorpo) h["Content-Type"] = "application/json";
+  return h;
+}
+
+async function carregarDadosNuvem() {
+  const resp = await fetch(`${JSONBIN_URL}/latest`, {
+    method: "GET",
+    headers: { ...cabecalhosJsonBin(false), "X-Bin-Meta": "false" },
+    cache: "no-store"
+  });
+  if (!resp.ok) throw new Error(`Erro ao ler JSONBin (HTTP ${resp.status})`);
+
+  const json = await resp.json();
+  // Aceita tanto { dados: [...] } quanto um array direto
+  if (Array.isArray(json)) return json;
+  if (json && Array.isArray(json.dados)) return json.dados;
+  return [];
+}
+
+async function salvarDadosNuvem(dados) {
+  const resp = await fetch(JSONBIN_URL, {
+    method: "PUT",
+    headers: cabecalhosJsonBin(true),
+    body: JSON.stringify({
+      dados: dados,
+      atualizadoEm: new Date().toISOString()
+    })
+  });
+  if (!resp.ok) throw new Error(`Erro ao gravar no JSONBin (HTTP ${resp.status})`);
+}
+
 btnUploadTrigger.addEventListener("click", () => {
   const senhaDigitada = prompt("Digite a senha de administração para carregar a planilha:");
   if (senhaDigitada === null) return;
@@ -21,28 +61,47 @@ btnUploadTrigger.addEventListener("click", () => {
 
 input.addEventListener("change", lerArquivo);
 
-btnLimpar.addEventListener("click", () => {
+btnLimpar.addEventListener("click", async () => {
   const senhaDigitada = prompt("Digite a senha de administração para limpar os dados:");
   if (senhaDigitada === null) return;
 
   if (senhaDigitada === "9704") {
-    localStorage.removeItem("darnel_dados_docas");
-    alert("Dados limpos com sucesso!");
-    location.reload();
+    try {
+      await salvarDadosNuvem([]);
+      localStorage.removeItem(CHAVE_CACHE);
+      alert("Dados limpos com sucesso para todos os computadores!");
+      location.reload();
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível limpar os dados na nuvem. Verifique a internet e a chave do JSONBin.");
+    }
   } else {
     alert("Senha incorreta! Ação negada.");
   }
 });
 
-window.addEventListener("DOMContentLoaded", () => {
-  const dadosSalvos = localStorage.getItem("darnel_dados_docas");
-  if (dadosSalvos) {
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const dados = await carregarDadosNuvem();
+    // Guarda uma cópia local como reserva
     try {
-      const dados = JSON.parse(dadosSalvos);
-      gerarPainel(dados);
+      localStorage.setItem(CHAVE_CACHE, JSON.stringify(dados));
     } catch (e) {
-      console.error("Erro ao carregar dados salvos:", e);
-      localStorage.removeItem("darnel_dados_docas");
+      console.warn("Não foi possível salvar a cópia local:", e);
+    }
+    gerarPainel(dados);
+  } catch (e) {
+    console.error("Erro ao carregar dados da nuvem:", e);
+
+    // Sem internet ou erro no JSONBin: usa a última cópia local
+    const dadosSalvos = localStorage.getItem(CHAVE_CACHE);
+    if (dadosSalvos) {
+      try {
+        gerarPainel(JSON.parse(dadosSalvos));
+      } catch (err) {
+        console.error("Erro ao carregar dados salvos:", err);
+        localStorage.removeItem(CHAVE_CACHE);
+      }
     }
   }
 });
@@ -53,16 +112,31 @@ function lerArquivo(event) {
 
   const reader = new FileReader();
 
-  reader.onload = function (e) {
+  reader.onload = async function (e) {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: "array" });
 
     const aba = workbook.Sheets[workbook.SheetNames[0]];
     const dados = XLSX.utils.sheet_to_json(aba);
 
-    localStorage.setItem("darnel_dados_docas", JSON.stringify(dados));
+    try {
+      localStorage.setItem(CHAVE_CACHE, JSON.stringify(dados));
+    } catch (err) {
+      console.warn("Não foi possível salvar a cópia local:", err);
+    }
 
     gerarPainel(dados);
+
+    try {
+      await salvarDadosNuvem(dados);
+      alert("Planilha enviada com sucesso! Pressione F5 nos demais computadores para atualizar.");
+    } catch (err) {
+      console.error(err);
+      alert("A planilha foi carregada apenas neste computador. Não foi possível enviar para a nuvem. Verifique a internet e a chave do JSONBin.");
+    }
+
+    // Permite reenviar o mesmo arquivo depois, se necessário
+    input.value = "";
   };
 
   reader.readAsArrayBuffer(arquivo);
@@ -257,8 +331,8 @@ function obterScrollMaximo() {
 function iniciarAutoScrollSuave() {
   if (animacaoId) cancelAnimationFrame(animacaoId);
 
-  const velocidadeDescida = 2; // Velocidade suave ao descer
-  const velocidadeSubida = 2;    // Retorno ao topo, suave porém mais rápido
+  const velocidadeDescida = 2;   // Velocidade ao descer (igual à subida)
+  const velocidadeSubida = 2;    // Retorno ao topo
 
   // Sincroniza com a posição real da página (ex.: após interação manual)
   posicaoScroll = window.scrollY;
