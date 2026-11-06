@@ -1,0 +1,344 @@
+:root {
+    --bg-body: #1E293B;
+    --navy-dark: #090D16;
+    --navy-brand: #3B82F6;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --border-color: #CBD5E1;
+    
+    /* Status por Cubagem */
+    --status-ok: #059669;        /* Verde */
+    --status-warning: #D97706;   /* Laranja/Âmbar */
+    --status-critical: #DC2626;  /* Vermelho */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-body) !important;
+    color: #F8FAFC;
+    line-height: 1.4;
+    padding-bottom: 10px;
+    font-size: 14px;
+}
+
+/* Header */
+header {
+    background-color: var(--navy-dark);
+    color: #FFFFFF;
+    padding: 14px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-img {
+    height: 38px;          
+    width: auto;           
+    object-fit: contain;
+    background: transparent; 
+}
+
+.header-text h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #FFFFFF;
+}
+
+.sub-header {
+    font-size: 0.78rem;
+    color: #94A3B8;
+}
+
+/* Botão de Upload Customizado */
+.btn-upload {
+    background: #2563EB;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    border: none;
+}
+
+.btn-upload:hover {
+    background: #1D4ED8;
+    transform: translateY(-1px);
+}
+
+/* Botão de Limpar */
+.btn-clear {
+    background: #334155;
+    color: #F8FAFC;
+    border: 1px solid #475569;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-clear:hover {
+    background: #DC2626;
+    border-color: #EF4444;
+}
+
+/* KPIs Topo */
+.kpi-container {
+    max-width: 1500px;
+    margin: 18px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.kpi-card {
+    background: #FFFFFF;
+    color: #0F172A;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.kpi-card.highlight {
+    border-left: 4px solid var(--navy-brand);
+}
+
+.kpi-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.kpi-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0F172A;
+}
+
+/* Grid do Painel */
+#painel {
+    max-width: 1500px;
+    margin: 18px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 16px;
+}
+
+/* Base dos Cards */
+.card {
+    color: #0F172A;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+/* Variantes de Fundo Dinâmicas por Ocupação */
+.card.status-card-ok {
+    background: #F0FDF4; /* Verde suave */
+    border-color: #A7F3D0;
+}
+
+.card.status-card-warning {
+    background: #FFFBEB; /* Âmbar suave */
+    border-color: #FDE68A;
+}
+
+.card.status-card-critical {
+    background: #FEF2F2; /* Vermelho suave de alerta */
+    border-color: #FCA5A5;
+}
+
+/* Faixa superior */
+.card-stripe {
+    height: 10px;
+    width: 100%;
+}
+
+.card-header {
+    padding: 12px 16px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.doca-titulo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0F172A;
+}
+
+.badge-pedidos {
+    background: #FFFFFF;
+    color: #1D4ED8;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 16px;
+    border: 1px solid #DBEAFE;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.card-body {
+    padding: 12px 16px;
+    flex-grow: 1;
+}
+
+.subtitulo-clientes {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.lista-clientes {
+    max-height: none;
+    overflow-y: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cliente {
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #FFFFFF;
+    color: #0F172A;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #64748B;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    word-break: break-word;
+}
+
+.card-footer {
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.6);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.total-valor {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 20px;
+    background: #FFFFFF;
+    color: #0F172A;
+    border-radius: 12px;
+    border: 2px dashed var(--border-color);
+}
+
+.empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #0F172A;
+}
+
+.empty-state span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* --- Rodapé Corporativo Centralizado --- */
+footer {
+    width: 100%;
+    margin-top: 50px;
+    padding: 24px 0;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+footer p {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #94A3B8;
+    letter-spacing: 0.3px;
+}
+
+/* --- Barra de Rolagem --- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0F172A;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748B;
+}

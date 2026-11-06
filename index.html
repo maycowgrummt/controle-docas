@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Docas | Darnel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <img src="img/darnel.png" alt="Logo Darnel" class="logo-img">
+            <div class="header-text">
+                <h1>Painel de Docas</h1>
+                <p class="sub-header">Monitoramento de Cargas e Estufagem</p>
+            </div>
+        </div>
+
+        <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+            <!-- Botão de Upload Protegido por Senha -->
+            <button id="btnUploadTrigger" class="btn-upload">
+                <span>📁 Carregar Planilha</span>
+            </button>
+            <input type="file" id="arquivoExcel" accept=".xlsx,.xls" style="display: none;">
+
+            <!-- Botão de Limpar Protegido por Senha -->
+            <button id="btnLimpar" class="btn-clear" title="Limpar dados salvos">
+                🗑️ Limpar
+            </button>
+        </div>
+    </header>
+
+    <!-- Resumo Geral / KPIs -->
+    <section id="kpis" class="kpi-container">
+        <div class="kpi-card">
+            <span class="kpi-label">Docas Ocupadas</span>
+            <span class="kpi-value" id="kpi-docas">0</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Total de Pedidos</span>
+            <span class="kpi-value" id="kpi-pedidos">0</span>
+        </div>
+        <div class="kpi-card highlight">
+            <span class="kpi-label">Cubagem Total</span>
+            <span class="kpi-value" id="kpi-cubagem">0.00 m³</span>
+        </div>
+    </section>
+
+    <!-- Area Principal do Painel -->
+    <main id="painel">
+        <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>Nenhuma planilha carregada no momento.</p>
+            <span>Selecione o arquivo `.xlsx` do dia para gerar a visão de docas.</span>
+        </div>
+    </main>
+
+    <!-- Rodapé Corporativo -->
+    <footer>
+        <p>Controle de Docas &bull; Desenvolvido por Maycow Grummt &bull; Darnel Group &copy; 2026</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
