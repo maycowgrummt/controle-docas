@@ -267,7 +267,7 @@ body.modo-operacao .cli-ctrl {
 
 .doca-progresso.completo { color: #15803D; }
 
-.card.doca-concluida {
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) {
     box-shadow: 0 0 0 3px #16A34A, 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -871,3 +871,35 @@ body.modo-operacao .cli-carregando .btn-cron,
 body.modo-operacao .cli-pausado .btn-cron { flex: 1; }
 
 body.modo-operacao .cli-motivos { grid-column: 1 / -1; }
+
+/* Cores das docas: ocupada = azul; livre ou finalizada = verde.
+   Doca em manutenção ou bloqueada nunca fica verde. */
+:root {
+    --status-warning: #2563EB;
+    --status-critical: #2563EB;
+}
+
+.card.status-card-free:not(.doca-manutencao):not(.doca-bloqueada),
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) {
+    background: #BBF7D0;
+    border-color: var(--status-free);
+}
+
+/* A cor da faixa, do ponto e do volume vem escrita no próprio card (app.js),
+   por isso a doca finalizada precisa do !important para virar verde */
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .card-stripe {
+    background-color: var(--status-free) !important;
+}
+
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .status-dot {
+    background-color: var(--status-free) !important;
+    box-shadow: 0 0 10px var(--status-free) !important;
+}
+
+/* Verde escuro para o texto continuar legível sobre o fundo verde */
+.card.status-card-free:not(.doca-manutencao):not(.doca-bloqueada) .total-valor,
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .total-topo,
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .total-valor,
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .doca-progresso.completo {
+    color: #14532D !important;
+}
