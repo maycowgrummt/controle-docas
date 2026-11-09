@@ -475,4 +475,7 @@ setInterval(() => {
 
 // O app.js chama isto toda vez que redesenha os cards
 window.Cronometro = { aplicar, carregando: () => totalCarregando, pedirSenha };
+
+// Usado pela aba Histórico (historico.js)
+export { db, COLECAO, calcular, diaOperacional, fmtDuracao, fmtHora, esc, toast };
 aplicar();

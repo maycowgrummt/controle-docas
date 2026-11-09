@@ -87,10 +87,30 @@
     </div>
 
     <div id="aba-historico" class="aba" hidden>
-        <div class="aba-vazia">
-            <p>Histórico em construção</p>
-            <span>Os tempos de cada carregamento já estão sendo gravados e vão aparecer aqui, com filtros e exportação para Excel.</span>
-        </div>
+        <section class="hist">
+            <div class="hist-filtros">
+                <label>De <input type="date" id="histDe"></label>
+                <label>Até <input type="date" id="histAte"></label>
+                <label>Doca <select id="histDoca"><option value="">Todas</option></select></label>
+                <label>Cliente <input type="search" id="histCliente" placeholder="Nome do cliente"></label>
+                <label>Operador <select id="histOperador"><option value="">Todos</option></select></label>
+                <button type="button" id="btnExportar" class="btn-exportar" disabled>📥 Exportar Excel</button>
+            </div>
+            <p id="histContagem" class="hist-contagem" aria-live="polite"></p>
+            <p id="histMensagem" class="hist-mensagem" hidden></p>
+            <div class="hist-tabela-wrap">
+                <table id="histTabela" class="hist-tabela" hidden>
+                    <thead>
+                        <tr>
+                            <th>Dia</th><th>Doca</th><th>Cliente</th><th>Pedidos</th><th>Volume (m³)</th>
+                            <th>Início</th><th>Fim</th><th>Carregando</th><th>Em pausa</th><th>Total</th>
+                            <th>Motivos das pausas</th><th>Iniciado por</th><th>Finalizado por</th>
+                        </tr>
+                    </thead>
+                    <tbody id="histCorpo"></tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
     <div id="aba-indicadores" class="aba" hidden>
@@ -107,5 +127,6 @@
 
     <script src="app.js"></script>
     <script type="module" src="cronometro.js"></script>
+    <script type="module" src="historico.js"></script>
 </body>
 </html>

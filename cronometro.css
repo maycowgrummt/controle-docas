@@ -389,6 +389,115 @@ body.modo-operacao .op-chip { display: block; }
 }
 
 /* ============================================================
+   Aba Histórico
+   ============================================================ */
+.hist {
+    width: 96%;
+    max-width: 1800px;
+    margin: 18px auto 0;
+    padding: 16px;
+    background: #FFFFFF;
+    color: #0F172A;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.hist-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.hist-filtros label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+.hist-filtros input,
+.hist-filtros select {
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 1px solid #94A3B8;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #0F172A;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.btn-exportar {
+    min-height: 44px;
+    margin-left: auto;
+    padding: 8px 18px;
+    border: 0;
+    border-radius: 8px;
+    background: #059669;
+    color: #FFFFFF;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.btn-exportar:disabled {
+    background: #CBD5E1;
+    color: #64748B;
+    cursor: not-allowed;
+}
+
+.btn-exportar:focus-visible { outline: 3px solid #0F172A; outline-offset: 2px; }
+
+.hist-contagem {
+    margin: 14px 0 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.hist-contagem:empty { display: none; }
+
+.hist-mensagem {
+    padding: 36px 12px;
+    text-align: center;
+    font-weight: 600;
+    color: #475569;
+}
+
+.hist-tabela-wrap { overflow-x: auto; }
+
+.hist-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.hist-tabela th,
+.hist-tabela td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #E2E8F0;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.hist-tabela th {
+    background: #F1F5F9;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #475569;
+}
+
+.hist-tabela .num { text-align: right; }
+.hist-tabela .hist-cliente { font-weight: 700; }
+
+/* ============================================================
    Visual limpo (TV): vale só com o Modo operação desligado
    ============================================================ */
 .cabecalho-direita {
