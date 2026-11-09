@@ -20,6 +20,7 @@ import {
   query,
   where,
   arrayUnion,
+  deleteField,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
@@ -38,6 +39,8 @@ const HORA_VIRADA_DIA = 4; // antes das 04:00 ainda conta como o dia anterior (t
 const MOTIVOS_PAUSA = ["Empilhadeira", "Conferência", "Motorista", "Outro"];
 const CHAVE_OPERADORES = "darnel_operadores"; // nomes já usados neste aparelho (viram sugestões)
 const MAX_SUGESTOES = 20;
+const DOC_STATUS_DOCAS = "_docas"; // documento com as docas em manutenção ou bloqueadas
+const TIPOS_INDISPONIVEL = { manutencao: "Manutenção", bloqueada: "Bloqueada" };
 
 
 const app = initializeApp(firebaseConfig);
@@ -50,6 +53,7 @@ let offsetMs = 0; // diferença entre o relógio do aparelho e o do servidor
 let diaAtual = null;
 let cancelarAssinatura = null;
 const registros = {}; // id do documento -> dados
+let statusDocas = {}; // doca -> { tipo, motivo, nome, t } das docas indisponíveis
 let totalCarregando = 0; // quantos clientes estão carregando agora (usado pelo auto-scroll)
 
 // ---------- Utilidades ----------
@@ -164,7 +168,10 @@ function btn(acao, classe) {
   return `<button type="button" class="btn-cron ${classe}" data-acao="${acao}">${ROTULOS[acao]}</button>`;
 }
 
-function controlesDe(estado) {
+function controlesDe(estado, indisponivel) {
+  if (estado === "pendente" && indisponivel) {
+    return `<button type="button" class="btn-cron btn-indisponivel" disabled>Doca indisponível</button>`;
+  }
   if (estado === "pendente") return btn("iniciar", "btn-iniciar");
   if (estado === "carregando") return btn("pausar", "btn-pausar") + btn("finalizar", "btn-finalizar");
   if (estado === "pausado") return btn("retomar", "btn-iniciar") + btn("finalizar", "btn-finalizar");
@@ -191,14 +198,15 @@ function pintarLinha(row, t) {
   const c = calcular(registros[chave]?.eventos, t);
 
   // Só reconstrói os botões quando algo mudou (preserva o foco e a lista de motivos)
-  const assinatura = `${c.estado}|${c.motivoAtual || ""}|${c.fim || ""}`;
+  const indisponivel = !!statusDocas[row.dataset.doca];
+  const assinatura = `${c.estado}|${c.motivoAtual || ""}|${c.fim || ""}|${indisponivel}`;
   if (row.dataset.assinatura !== assinatura) {
     row.dataset.assinatura = assinatura;
     row.dataset.estado = c.estado;
     row.classList.remove("cli-pendente", "cli-carregando", "cli-pausado", "cli-concluido");
     row.classList.add(`cli-${c.estado}`);
     const ctrl = row.querySelector(".cli-ctrl");
-    if (ctrl) ctrl.innerHTML = controlesDe(c.estado);
+    if (ctrl) ctrl.innerHTML = controlesDe(c.estado, indisponivel);
     row.querySelector(".cli-motivos")?.remove();
     setTexto(row.querySelector(".cli-info"), infoDe(c));
   }
@@ -208,12 +216,36 @@ function pintarLinha(row, t) {
   return c.estado;
 }
 
+function pintarStatusDoca(card) {
+  const status = statusDocas[card.dataset.doca];
+  const assinatura = status ? `${status.tipo}|${status.motivo}|${status.nome}|${status.t}` : "";
+  if (card.dataset.statusAssinatura === assinatura) return;
+  card.dataset.statusAssinatura = assinatura;
+
+  card.classList.toggle("doca-manutencao", status?.tipo === "manutencao");
+  card.classList.toggle("doca-bloqueada", status?.tipo === "bloqueada");
+
+  const faixa = card.querySelector(".doca-status");
+  faixa.hidden = !status;
+  const detalhe = status
+    ? [status.motivo, `${status.nome} às ${fmtHora(status.t)}`].filter(Boolean).join(" · ")
+    : "";
+  setTexto(faixa.querySelector(".doca-status-tipo"), status ? TIPOS_INDISPONIVEL[status.tipo] : "");
+  setTexto(faixa.querySelector(".doca-status-detalhe"), detalhe);
+  card.title = status ? `${TIPOS_INDISPONIVEL[status.tipo]}: ${detalhe}` : "";
+
+  const botao = card.querySelector("[data-doca-status]");
+  botao.textContent = status ? "Liberar doca" : "Indisponibilizar doca";
+  botao.classList.toggle("liberar", !!status);
+}
+
 function aplicar() {
   if (!diaAtual) return;
   const t = agora();
   const cont = { carregando: 0, pausado: 0, concluido: 0, total: 0, volumeTotal: 0, volumeConcluido: 0 };
 
   document.querySelectorAll("#painel .card").forEach((card) => {
+    pintarStatusDoca(card);
     const linhas = card.querySelectorAll(".cliente[data-doca]");
     if (!linhas.length) return;
     let concluidas = 0;
@@ -314,7 +346,7 @@ function abrirMotivos(row) {
 // validar devolve a mensagem de erro, ou "" quando o texto estiver certo.
 let janelaAberta = false;
 
-function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "", sugestoes = [], validar }) {
+function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "", sugestoes = [], extraHtml = "", capturar, validar }) {
   if (janelaAberta) return Promise.resolve(null);
   janelaAberta = true;
 
@@ -325,6 +357,7 @@ function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "
       <form class="senha-janela" role="dialog" aria-modal="true" aria-labelledby="senhaTitulo">
         <h2 id="senhaTitulo" class="senha-titulo"></h2>
         <p class="senha-detalhe"></p>
+        ${extraHtml}
         <label class="senha-rotulo" for="senhaCampo">${rotulo}</label>
         <input id="senhaCampo" class="senha-campo ${classeCampo}" type="${tipo}" inputmode="${inputmode}" maxlength="40" autocomplete="off" list="senhaSugestoes">
         <datalist id="senhaSugestoes">${sugestoes.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
@@ -338,7 +371,7 @@ function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "
     fundo.querySelector(".senha-titulo").textContent = titulo;
     fundo.querySelector(".senha-detalhe").textContent = detalhe;
 
-    const campo = fundo.querySelector(".senha-campo");
+    const campo = fundo.querySelector("#senhaCampo");
     const erro = fundo.querySelector(".senha-erro");
 
     const fechar = (resposta) => {
@@ -352,6 +385,7 @@ function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "
       const texto = campo.value.trim();
       const problema = validar(texto);
       if (!problema) {
+        capturar?.(fundo);
         fechar(texto);
       } else {
         erro.textContent = problema;
@@ -391,11 +425,15 @@ function nomesSugeridos() {
 }
 
 // Nome de quem está fazendo a ação. Responde null se cancelar.
-async function pedirNome(acao, row) {
+const pedirNome = (acao, row) => perguntarNome({
+  titulo: ROTULOS[acao],
+  detalhe: `${row.dataset.cliente} · Doca ${row.dataset.doca}`
+});
+
+async function perguntarNome(opcoes) {
   const sugestoes = nomesSugeridos();
   const nome = await abrirJanela({
-    titulo: ROTULOS[acao],
-    detalhe: `${row.dataset.cliente} · Doca ${row.dataset.doca}`,
+    ...opcoes,
     rotulo: "Seu nome",
     tipo: "text",
     inputmode: "text",
@@ -425,7 +463,13 @@ document.addEventListener("click", async (ev) => {
 
   if (EVENTO_COM_NOME[acao]) {
     const nome = await pedirNome(acao, row);
-    if (nome) registrar(row, EVENTO_COM_NOME[acao], {}, nome);
+    if (!nome) return;
+    // A doca pode ter ficado indisponível enquanto o nome era digitado
+    if (acao === "iniciar" && statusDocas[row.dataset.doca]) {
+      toast("Esta doca ficou indisponível e o carregamento não foi iniciado.");
+      return;
+    }
+    registrar(row, EVENTO_COM_NOME[acao], {}, nome);
     return;
   }
 
@@ -436,6 +480,67 @@ document.addEventListener("click", async (ev) => {
     case "cancelar-motivo": row.querySelector(".cli-motivos")?.remove(); break;
   }
 });
+
+// ---------- Docas em manutenção ou bloqueadas ----------
+async function gravarStatusDoca(doca, valor) {
+  try {
+    await setDoc(doc(db, COLECAO, DOC_STATUS_DOCAS), { docas: { [doca]: valor } }, { merge: true });
+  } catch (e) {
+    console.error("Erro ao gravar a situação da doca:", e);
+    toast("Não foi possível alterar a doca. Verifique a conexão e tente de novo.");
+  }
+}
+
+async function indisponibilizarDoca(doca) {
+  let extras = null;
+  const nome = await perguntarNome({
+    titulo: `Doca ${doca}`,
+    detalhe: "Marcar esta doca como indisponível.",
+    extraHtml: `
+      <div class="doca-tipos" role="radiogroup" aria-label="Situação da doca">
+        <label><input type="radio" name="docaTipo" value="manutencao" checked> Manutenção</label>
+        <label><input type="radio" name="docaTipo" value="bloqueada"> Bloqueada</label>
+      </div>
+      <label class="senha-rotulo" for="docaMotivo">Motivo (opcional)</label>
+      <input id="docaMotivo" class="senha-campo campo-nome doca-motivo" type="text" maxlength="60" autocomplete="off">`,
+    capturar: (fundo) => {
+      extras = {
+        tipo: fundo.querySelector('input[name="docaTipo"]:checked').value,
+        motivo: fundo.querySelector("#docaMotivo").value.trim()
+      };
+    }
+  });
+  if (nome) gravarStatusDoca(doca, { ...extras, nome, t: agora() });
+}
+
+async function liberarDoca(doca) {
+  const status = statusDocas[doca];
+  const nome = await perguntarNome({
+    titulo: `Liberar Doca ${doca}`,
+    detalhe: `Situação atual: ${TIPOS_INDISPONIVEL[status.tipo]}.`
+  });
+  if (nome) gravarStatusDoca(doca, deleteField());
+}
+
+document.addEventListener("click", (ev) => {
+  if (!document.body.classList.contains("modo-operacao")) return;
+  const botao = ev.target.closest("[data-doca-status]");
+  if (!botao) return;
+  const doca = botao.closest(".card").dataset.doca;
+  if (statusDocas[doca]) liberarDoca(doca);
+  else indisponibilizarDoca(doca);
+});
+
+function assinarStatusDocas() {
+  onSnapshot(
+    doc(db, COLECAO, DOC_STATUS_DOCAS),
+    (snap) => {
+      statusDocas = snap.data()?.docas || {};
+      aplicar();
+    },
+    (err) => console.error("Erro ao ler a situação das docas:", err)
+  );
+}
 
 // ---------- Interface auxiliar ----------
 function toast(msg) {
@@ -491,6 +596,7 @@ async function sincronizarRelogio() {
 
 // ---------- Início ----------
 assinar();
+assinarStatusDocas();
 sincronizarRelogio();
 
 setInterval(() => {

@@ -580,6 +580,109 @@ body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: minmax
    Aparência geral (TV e tablets)
    ============================================================ */
 
+/* Docas em manutenção ou bloqueadas */
+.doca-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+    padding: 6px 16px;
+    color: #FFFFFF;
+    font-size: 0.78rem;
+}
+
+.doca-status[hidden] { display: none; }
+
+.doca-status-tipo {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.doca-manutencao .doca-status { background: #6D28D9; }
+.doca-bloqueada .doca-status { background: #334155; }
+
+/* A faixa e o ponto vêm com a cor inline do app.js; aqui a situação da doca tem prioridade */
+.doca-manutencao .card-stripe,
+.doca-manutencao .status-dot { background-color: #6D28D9 !important; box-shadow: none !important; }
+.doca-bloqueada .card-stripe,
+.doca-bloqueada .status-dot { background-color: #334155 !important; box-shadow: none !important; }
+
+.card.doca-manutencao { border-color: #6D28D9; }
+.card.doca-bloqueada { border-color: #334155; }
+
+/* Na miniatura da doca livre (TV) só cabe o tipo */
+body:not(.modo-operacao) .status-card-free .doca-status {
+    justify-content: center;
+    padding: 3px 4px;
+}
+
+body:not(.modo-operacao) .status-card-free .doca-status-tipo { font-size: 0.6rem; }
+body:not(.modo-operacao) .status-card-free .doca-status-detalhe { display: none; }
+
+/* Botão de indisponibilizar e liberar: só com o Modo operação ligado */
+.doca-acoes { display: none; }
+
+body.modo-operacao .doca-acoes {
+    display: block;
+    padding: 0 16px 10px;
+}
+
+.btn-doca-status {
+    width: 100%;
+    min-height: 36px;
+    border: 1px solid #94A3B8;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #475569;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.btn-doca-status.liberar {
+    border-color: #16A34A;
+    color: #15803D;
+}
+
+.btn-doca-status:focus-visible { outline: 3px solid #0F172A; outline-offset: 2px; }
+
+.btn-indisponivel {
+    background: #E2E8F0;
+    color: #475569;
+    cursor: not-allowed;
+}
+
+.doca-tipos {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.doca-tipos label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid #94A3B8;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.doca-tipos label:has(input:checked) {
+    border-color: #2563EB;
+    background: #EFF6FF;
+}
+
+.doca-motivo { margin-bottom: 12px; }
+
 /* Indicadores sempre alinhados, com o modo ligado ou desligado */
 .kpi-container { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 

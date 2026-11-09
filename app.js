@@ -374,6 +374,7 @@ function gerarPainel(dados) {
     }
 
     card.className = `card ${classeStatus}`;
+    card.dataset.doca = doca;
 
     const listaClientes = Array.from(info.clientes);
 
@@ -408,6 +409,11 @@ function gerarPainel(dados) {
         </div>
       </div>
 
+      <div class="doca-status" hidden>
+        <strong class="doca-status-tipo"></strong>
+        <span class="doca-status-detalhe"></span>
+      </div>
+
       <div class="card-body">
         <div class="subtitulo-clientes">${info.ocupada ? `Clientes (${listaClientes.length})` : 'Status'}</div>
         ${
@@ -424,6 +430,10 @@ function gerarPainel(dados) {
               : `<div class="cliente-livre">Doca livre disponível para estufagem</div>`
           }
         </div>
+      </div>
+
+      <div class="doca-acoes">
+        <button type="button" class="btn-doca-status" data-doca-status>Indisponibilizar doca</button>
       </div>
 
       <div class="card-footer">
