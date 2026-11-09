@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Docas | Darnel</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="cronometro.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,6 +23,10 @@
         </div>
 
         <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+            <button id="btnModoOperacao" class="btn-operacao" type="button" aria-pressed="false" title="Mostra os botões de iniciar, pausar e finalizar carregamento">
+                🖐 Modo operação
+            </button>
+
             <button id="btnUploadTrigger" class="btn-upload">
                 <span>📁 Carregar Planilha</span>
             </button>
@@ -30,8 +35,17 @@
             <button id="btnLimpar" class="btn-clear" title="Limpar dados salvos">
                 🗑️ Limpar
             </button>
-        </div>
+        </div> 
     </header>
+
+    <!-- Abas -->
+    <nav class="abas" role="tablist" aria-label="Seções do painel">
+        <button type="button" class="aba-btn ativa" data-aba="painel" role="tab" aria-selected="true">Painel</button>
+        <button type="button" class="aba-btn" data-aba="historico" role="tab" aria-selected="false">Histórico</button>
+        <button type="button" class="aba-btn" data-aba="indicadores" role="tab" aria-selected="false">Indicadores</button>
+    </nav>
+
+    <div id="aba-painel" class="aba">
 
     <!-- Resumo Geral / KPIs -->
     <section id="kpis" class="kpi-container">
@@ -47,6 +61,18 @@
             <span class="kpi-label">Cubagem Total</span>
             <span class="kpi-value" id="kpi-cubagem">0.00 m³</span>
         </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Carregando agora</span>
+            <span class="kpi-value" id="kpi-carregando">0</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Pausados</span>
+            <span class="kpi-value" id="kpi-pausadas">0</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Clientes concluídos</span>
+            <span class="kpi-value" id="kpi-concluidas">0 / 0</span>
+        </div>
     </section>
 
     <!-- Area Principal do Painel -->
@@ -58,11 +84,28 @@
         </div>
     </main>
 
+    </div>
+
+    <div id="aba-historico" class="aba" hidden>
+        <div class="aba-vazia">
+            <p>Histórico em construção</p>
+            <span>Os tempos de cada carregamento já estão sendo gravados e vão aparecer aqui, com filtros e exportação para Excel.</span>
+        </div>
+    </div>
+
+    <div id="aba-indicadores" class="aba" hidden>
+        <div class="aba-vazia">
+            <p>Indicadores em construção</p>
+            <span>Tempo médio, produtividade em m³/hora e motivos de pausa serão calculados a partir do histórico.</span>
+        </div>
+    </div>
+
     <!-- Rodapé Corporativo -->
     <footer>
         <p>Controle de Docas &bull; Desenvolvido por Maycow Grummt &bull; Darnel Group &copy; 2026</p>
     </footer>
 
     <script src="app.js"></script>
+    <script type="module" src="cronometro.js"></script>
 </body>
 </html>

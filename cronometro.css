@@ -1,0 +1,479 @@
+/* ============================================================
+   Cronômetro de carregamento  |  complementa o style.css
+   Estados da LINHA do cliente (cores diferentes das do status da doca):
+   pendente = branco · carregando = azul · pausado = âmbar · concluído = verde
+   ============================================================ */
+
+.cliente[data-doca] {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.cli-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.cli-nome {
+    flex: 1;
+    min-width: 0;
+}
+
+.cli-tempo {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 1.05rem;
+    white-space: nowrap;
+}
+
+.cli-info {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.cli-info:empty {
+    display: none;
+}
+
+/* ----- Estados ----- */
+.cliente.cli-carregando {
+    background: #EFF6FF;
+    border-left-color: #2563EB;
+    animation: cli-pulso 2s ease-in-out infinite;
+}
+.cliente.cli-carregando .cli-tempo { color: #1D4ED8; }
+
+.cliente.cli-pausado {
+    background: #FEF3C7;
+    border-left-color: #B45309;
+}
+.cliente.cli-pausado .cli-tempo,
+.cliente.cli-pausado .cli-info { color: #92400E; }
+
+.cliente.cli-concluido {
+    background: #DCFCE7;
+    border-left-color: #16A34A;
+}
+.cliente.cli-concluido .cli-nome { color: #14532D; }
+.cliente.cli-concluido .cli-tempo { color: #15803D; }
+
+@keyframes cli-pulso {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35); }
+    50%      { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0); }
+}
+
+/* ----- Botões (só aparecem em ?modo=operacao) ----- */
+.cli-ctrl {
+    display: none;
+    gap: 8px;
+}
+
+body.modo-operacao .cli-ctrl {
+    display: flex;
+}
+
+.btn-cron {
+    flex: 1;
+    min-height: 48px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease, filter 0.15s ease;
+}
+
+.btn-cron:active { transform: scale(0.97); }
+.btn-cron:focus-visible { outline: 3px solid #0F172A; outline-offset: 2px; }
+
+.btn-iniciar    { background: #059669; }
+.btn-pausar     { background: #D97706; }
+.btn-finalizar  { background: #DC2626; }
+.btn-reabrir {
+    min-height: 36px;
+    background: transparent;
+    color: #475569;
+    border: 1px solid #94A3B8;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.btn-cron.confirmando {
+    background: #0F172A;
+    box-shadow: 0 0 0 3px #FACC15;
+}
+
+/* ----- Janela de senha ----- */
+.senha-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.7);
+}
+
+.senha-janela {
+    width: 100%;
+    max-width: 360px;
+    padding: 20px;
+    background: #FFFFFF;
+    color: #0F172A;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.senha-titulo {
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.senha-detalhe {
+    margin: 4px 0 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    overflow-wrap: anywhere;
+}
+
+.senha-rotulo {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.senha-campo {
+    width: 100%;
+    min-height: 48px;
+    padding: 8px 12px;
+    border: 2px solid #94A3B8;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 1.4rem;
+    letter-spacing: 0.3em;
+    text-align: center;
+}
+
+.senha-campo:focus {
+    outline: none;
+    border-color: #2563EB;
+}
+
+.senha-erro {
+    min-height: 1.2em;
+    margin: 6px 0 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #B91C1C;
+}
+
+.senha-botoes {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-senha {
+    flex: 1;
+    min-height: 48px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.btn-senha.confirmar { background: #059669; color: #FFFFFF; }
+.btn-senha.cancelar  { background: #E2E8F0; color: #334155; }
+.btn-senha:focus-visible { outline: 3px solid #0F172A; outline-offset: 2px; }
+
+/* ----- Motivo da pausa ----- */
+.cli-motivos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.cli-motivos-titulo {
+    grid-column: 1 / -1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #92400E;
+}
+
+.btn-motivo {
+    min-height: 44px;
+    border: 2px solid #D97706;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #92400E;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.btn-motivo:active { background: #FDE68A; }
+.btn-motivo.cancelar {
+    grid-column: 1 / -1;
+    min-height: 36px;
+    border-color: #CBD5E1;
+    color: #475569;
+}
+
+/* ----- Progresso no card ----- */
+.doca-progresso {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.doca-progresso .barra {
+    flex: 1;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.doca-progresso .barra i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: #16A34A;
+    transition: width 0.4s ease;
+}
+
+.doca-progresso.completo { color: #15803D; }
+
+.card.doca-concluida {
+    box-shadow: 0 0 0 3px #16A34A, 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ----- Operador e avisos ----- */
+.op-chip {
+    display: none;
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    z-index: 50;
+    background: #0F172A;
+    color: #F8FAFC;
+    border: 1px solid #475569;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+body.modo-operacao .op-chip { display: block; }
+
+.toast-cron {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 60;
+    max-width: 90%;
+    background: #7F1D1D;
+    color: #FFFFFF;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cliente.cli-carregando { animation: none; }
+    .doca-progresso .barra i { transition: none; }
+}
+
+/* ============================================================
+   Botão Modo operação (cabeçalho) e abas
+   ============================================================ */
+.btn-operacao {
+    background: #334155;
+    color: #F8FAFC;
+    border: 1px solid #475569;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-operacao:hover { background: #475569; }
+.btn-operacao:focus-visible { outline: 2px solid #3B82F6; outline-offset: 2px; }
+
+.btn-operacao.ativo {
+    background: #059669;
+    border-color: #10B981;
+}
+
+.abas {
+    width: 96%;
+    max-width: 1800px;
+    margin: 14px auto 0;
+    padding: 0 10px;
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.aba-btn {
+    min-height: 44px;
+    padding: 10px 18px;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    color: #94A3B8;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.aba-btn:hover { color: #E2E8F0; }
+.aba-btn:focus-visible { outline: 2px solid #3B82F6; outline-offset: -2px; }
+
+.aba-btn.ativa {
+    color: #FFFFFF;
+    border-bottom-color: var(--navy-brand);
+}
+
+.aba-vazia {
+    width: 96%;
+    max-width: 1800px;
+    margin: 18px auto 0;
+    padding: 50px 20px;
+    text-align: center;
+    background: #FFFFFF;
+    color: #0F172A;
+    border-radius: 12px;
+    border: 2px dashed var(--border-color);
+}
+
+.aba-vazia p {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.aba-vazia span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* ============================================================
+   Visual limpo (TV): vale só com o Modo operação desligado
+   ============================================================ */
+.cabecalho-direita {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.total-topo {
+    display: none;
+    font-size: 1.05rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* Cabeçalho enxuto */
+body:not(.modo-operacao) #btnUploadTrigger,
+body:not(.modo-operacao) #btnLimpar,
+body:not(.modo-operacao) .abas {
+    display: none;
+}
+
+/* Indicadores mais baixos e em uma faixa só */
+body:not(.modo-operacao) .kpi-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+body:not(.modo-operacao) .kpi-card { padding: 8px 12px; }
+body:not(.modo-operacao) .kpi-label { font-size: 0.68rem; }
+body:not(.modo-operacao) .kpi-value { font-size: 1.2rem; }
+
+@media (min-width: 600px) {
+    body:not(.modo-operacao) .kpi-container { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+    body:not(.modo-operacao) .kpi-container { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+/* Cards mais simples: volume no topo, sem rodapé nem subtítulo */
+body:not(.modo-operacao) .total-topo { display: inline; }
+body:not(.modo-operacao) .card-footer,
+body:not(.modo-operacao) .subtitulo-clientes,
+body:not(.modo-operacao) .card:not(.doca-iniciada) .doca-progresso {
+    display: none;
+}
+
+/* Docas livres em miniatura, só com o número */
+body:not(.modo-operacao) .card.status-card-free { align-self: start; }
+body:not(.modo-operacao) .status-card-free .card-stripe { height: 6px; }
+body:not(.modo-operacao) .status-card-free .card-header {
+    justify-content: center;
+    padding: 8px 6px;
+    border-bottom: 0;
+}
+body:not(.modo-operacao) .status-card-free .doca-palavra,
+body:not(.modo-operacao) .status-card-free .status-dot,
+body:not(.modo-operacao) .status-card-free .cabecalho-direita,
+body:not(.modo-operacao) .status-card-free .card-body {
+    display: none;
+}
+
+/* Grade mais fina: card ocupado usa 3 colunas e doca livre usa 1.
+   O total de colunas é sempre múltiplo de 3, para os cards preencherem a largura toda. */
+@media (min-width: 420px) {
+    body:not(.modo-operacao) #painel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    body:not(.modo-operacao) #painel .card { grid-column: span 3; }
+    body:not(.modo-operacao) #painel .card.status-card-free { grid-column: span 1; }
+    body:not(.modo-operacao) #painel .empty-state { grid-column: 1 / -1; }
+}
+
+@media (min-width: 720px) {
+    body:not(.modo-operacao) #painel { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1060px) {
+    body:not(.modo-operacao) #painel { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1400px) {
+    body:not(.modo-operacao) #painel { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1760px) {
+    body:not(.modo-operacao) #painel { grid-template-columns: repeat(15, minmax(0, 1fr)); }
+}

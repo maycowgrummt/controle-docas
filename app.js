@@ -8,6 +8,84 @@ const kpiDocas = document.getElementById("kpi-docas");
 const kpiPedidos = document.getElementById("kpi-pedidos");
 const kpiCubagem = document.getElementById("kpi-cubagem");
 
+// --- Senha de administração: único lugar para trocar. Também usada pelo cronometro.js ---
+const SENHA_ADMIN = "9704";
+window.conferirSenhaAdmin = (digitada) => digitada === SENHA_ADMIN;
+
+// --- Modo operação (botões do cronômetro) e abas ---
+// O modo fica guardado no próprio aparelho: o tablet do encarregado liga uma vez e continua assim.
+const CHAVE_MODO = "darnel_modo_operacao";
+const btnModoOperacao = document.getElementById("btnModoOperacao");
+let modoOperacao = false;
+let abaAtual = "painel";
+let precisaSincronizarScroll = false;
+
+try {
+  modoOperacao = localStorage.getItem(CHAVE_MODO) === "1";
+} catch (e) {
+  console.warn("Não foi possível ler o modo salvo:", e);
+}
+
+function aplicarModoOperacao() {
+  document.body.classList.toggle("modo-operacao", modoOperacao);
+  btnModoOperacao.classList.toggle("ativo", modoOperacao);
+  btnModoOperacao.setAttribute("aria-pressed", String(modoOperacao));
+  btnModoOperacao.textContent = modoOperacao ? "✅ Operando" : "🖐 Modo operação";
+}
+
+btnModoOperacao.addEventListener("click", async () => {
+  // Ligar o modo exige a senha; desligar não
+  if (!modoOperacao) {
+    if (!window.Cronometro) {
+      alert("Os cronômetros não carregaram. Verifique a internet e abra a página pelo endereço do site.");
+      return;
+    }
+    const liberado = await window.Cronometro.pedirSenha("🖐 Modo operação", "Libera os botões do cronômetro neste aparelho.");
+    if (!liberado) return;
+  }
+
+  modoOperacao = !modoOperacao;
+  try {
+    localStorage.setItem(CHAVE_MODO, modoOperacao ? "1" : "0");
+  } catch (e) {
+    console.warn("Não foi possível salvar o modo:", e);
+  }
+  aplicarModoOperacao();
+  // Com o modo desligado as abas somem: volta sempre para o Painel
+  if (!modoOperacao) mostrarAba("painel");
+});
+
+aplicarModoOperacao();
+
+function mostrarAba(nome) {
+  abaAtual = nome;
+  document.querySelectorAll(".aba").forEach((el) => {
+    el.hidden = el.id !== `aba-${nome}`;
+  });
+  document.querySelectorAll(".aba-btn").forEach((b) => {
+    const ativa = b.dataset.aba === nome;
+    b.classList.toggle("ativa", ativa);
+    b.setAttribute("aria-selected", String(ativa));
+  });
+  window.scrollTo(0, 0);
+  precisaSincronizarScroll = true;
+}
+
+document.querySelectorAll(".aba-btn").forEach((b) => {
+  b.addEventListener("click", () => mostrarAba(b.dataset.aba));
+});
+
+// Regra do auto-scroll (TV): só rola na aba Painel e com o modo operação desligado.
+// Continua rolando mesmo com cliente carregando. Troque para true se quiser parar nesse caso.
+const PARAR_SCROLL_COM_CARREGAMENTO = false;
+
+function autoScrollPermitido() {
+  if (modoOperacao) return false;
+  if (abaAtual !== "painel") return false;
+  if (PARAR_SCROLL_COM_CARREGAMENTO && window.Cronometro && window.Cronometro.carregando() > 0) return false;
+  return true;
+}
+
 // --- Configuração do JSONBin.io ---
 const JSONBIN_ID = "6aede7adffd5d16053ac4cbb";
 const JSONBIN_KEY = "$2a$10$NoRCHe7AN8E83aWAYYlLjezhxxRQIK.SgXLTxNAU.3kACcz3S3SCO"; // Access Key com permissão Read + Update
@@ -16,7 +94,7 @@ const CHAVE_CACHE = "darnel_dados_docas"; // cópia local usada apenas como rese
 
 // Se você usar a Master Key em vez da Access Key, troque "X-Access-Key" por "X-Master-Key"
 function cabecalhosJsonBin(comCorpo) {
-  const h = { "X--Key": JSONBIN_KEY };
+  const h = { "X-Access-Key": JSONBIN_KEY };
   if (comCorpo) h["Content-Type"] = "application/json";
   return h;
 }
@@ -52,7 +130,7 @@ btnUploadTrigger.addEventListener("click", () => {
   const senhaDigitada = prompt("Digite a senha de administração para carregar a planilha:");
   if (senhaDigitada === null) return;
 
-  if (senhaDigitada === "9704") {
+  if (window.conferirSenhaAdmin(senhaDigitada)) {
     input.click();
   } else {
     alert("Senha incorreta! Acesso negado.");
@@ -65,7 +143,7 @@ btnLimpar.addEventListener("click", async () => {
   const senhaDigitada = prompt("Digite a senha de administração para limpar os dados:");
   if (senhaDigitada === null) return;
 
-  if (senhaDigitada === "9704") {
+  if (window.conferirSenhaAdmin(senhaDigitada)) {
     try {
       await salvarDadosNuvem([]);
       localStorage.removeItem(CHAVE_CACHE);
@@ -153,6 +231,13 @@ function extrairNumeroDoca(texto) {
   return "";
 }
 
+// Protege o HTML contra caracteres especiais vindos da planilha
+function escHtml(texto) {
+  return String(texto).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
 function gerarPainel(dados) {
   painel.innerHTML = "";
 
@@ -183,6 +268,7 @@ function gerarPainel(dados) {
     if (!docasOcupadasMap[doca]) {
       docasOcupadasMap[doca] = {
         clientes: new Set(),
+        porCliente: {}, // cubagem e pedidos de cada cliente dentro da doca
         cubagem: 0,
         pedidos: 0,
         ocupada: true
@@ -191,6 +277,11 @@ function gerarPainel(dados) {
 
     if (clienteLimpo) {
       docasOcupadasMap[doca].clientes.add(clienteLimpo);
+
+      const pc = docasOcupadasMap[doca].porCliente;
+      if (!pc[clienteLimpo]) pc[clienteLimpo] = { cubagem: 0, pedidos: 0 };
+      pc[clienteLimpo].cubagem += cubagem;
+      pc[clienteLimpo].pedidos++;
     }
 
     docasOcupadasMap[doca].pedidos++;
@@ -220,6 +311,7 @@ function gerarPainel(dados) {
         doca: nomeDoca,
         info: {
           clientes: new Set(),
+          porCliente: {},
           cubagem: 0,
           pedidos: 0,
           ocupada: false
@@ -264,27 +356,49 @@ function gerarPainel(dados) {
 
     const listaClientes = Array.from(info.clientes);
 
+    // Linha de cada cliente, com os dados que o cronômetro precisa
+    const htmlCliente = (c) => {
+      const pc = info.porCliente[c] || { cubagem: 0, pedidos: 0 };
+      return `
+        <div class="cliente" data-doca="${doca}" data-cliente="${escHtml(c)}" data-vol="${pc.cubagem.toFixed(3)}" data-ped="${pc.pedidos}">
+          <div class="cli-topo">
+            <span class="cli-nome">${escHtml(c)}</span>
+            <span class="cli-tempo"></span>
+          </div>
+          <div class="cli-info"></div>
+          <div class="cli-ctrl"></div>
+        </div>`;
+    };
+
     card.innerHTML = `
       <div class="card-stripe" style="background-color: ${corStatus}"></div>
       <div class="card-header">
         <div class="doca-titulo-container">
           <span class="status-dot" style="background-color: ${corStatus}; box-shadow: 0 0 10px ${corStatus}"></span>
-          <h2>Doca ${doca}</h2>
+          <h2><span class="doca-palavra">Doca </span>${doca}</h2>
         </div>
-        ${
-          info.ocupada 
-            ? `<span class="badge-pedidos">${info.pedidos} ${info.pedidos === 1 ? 'pedido' : 'pedidos'}</span>`
-            : `<span class="badge-livre">LIVRE</span>`
-        }
+        <div class="cabecalho-direita">
+          ${
+            info.ocupada
+              ? `<span class="badge-pedidos">${info.pedidos} ${info.pedidos === 1 ? 'pedido' : 'pedidos'}</span>
+                 <span class="total-topo" style="color: ${corStatus}">${info.cubagem.toFixed(2)} m³</span>`
+              : `<span class="badge-livre">LIVRE</span>`
+          }
+        </div>
       </div>
 
       <div class="card-body">
         <div class="subtitulo-clientes">${info.ocupada ? `Clientes (${listaClientes.length})` : 'Status'}</div>
+        ${
+          info.ocupada && listaClientes.length > 0
+            ? `<div class="doca-progresso"><div class="barra"><i></i></div><span class="txt"></span></div>`
+            : ``
+        }
         <div class="lista-clientes">
           ${
             info.ocupada
               ? (listaClientes.length > 0
-                  ? listaClientes.map((c) => `<div class="cliente">${c}</div>`).join("")
+                  ? listaClientes.map(htmlCliente).join("")
                   : `<div class="cliente">Sem cliente especificado</div>`)
               : `<div class="cliente-livre">Doca livre disponível para estufagem</div>`
           }
@@ -300,7 +414,10 @@ function gerarPainel(dados) {
     painel.appendChild(card);
   });
 
-  // Inicia o auto-scroll após a renderização
+  // Pinta os estados do cronômetro nos cards recém-criados
+  if (window.Cronometro) window.Cronometro.aplicar();
+
+  // O auto-scroll decide sozinho, a cada instante, se pode rolar (ver autoScrollPermitido)
   setTimeout(iniciarAutoScrollSuave, 1000);
 }
 
@@ -339,6 +456,19 @@ function iniciarAutoScrollSuave() {
 
   function passo() {
     if (pausadoPorInteracao) return;
+
+    // Parado por regra (ver autoScrollPermitido): fica de prontidão
+    if (!autoScrollPermitido()) {
+      precisaSincronizarScroll = true;
+      animacaoId = requestAnimationFrame(passo);
+      return;
+    }
+
+    // Ao voltar a rolar, continua de onde a tela está, sem dar salto
+    if (precisaSincronizarScroll) {
+      posicaoScroll = window.scrollY;
+      precisaSincronizarScroll = false;
+    }
 
     // Se estiver em pausa (no topo ou no fundo), decrementa o contador
     if (tempoPausaScroll > 0) {
