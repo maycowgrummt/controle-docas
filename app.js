@@ -88,7 +88,7 @@ function autoScrollPermitido() {
 
 // --- Configuração do JSONBin.io ---
 const JSONBIN_ID = "6aede7adffd5d16053ac4cbb";
-const JSONBIN_KEY = "$2a$10$NoRCHe7AN8E83aWAYYlLjezhxxRQIK.SgXLTxNAU.3kACcz3S3SCO"; // Access Key com permissão Read + Update
+const JSONBIN_KEY = "$2a$10$d98ZyQNKNVKa/zBvCLAsr.usUeMJrollgM09XBlJ.Z17RY1l7UoB2"; // Access Key com permissão Read + Update
 const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
 const CHAVE_CACHE = "darnel_dados_docas"; // cópia local usada apenas como reserva (se ficar sem internet)
 
