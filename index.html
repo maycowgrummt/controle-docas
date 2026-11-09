@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Docas | Darnel</title>
+    <link rel="icon" href="img/darnel.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="cronometro.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +34,7 @@
             </button>
 
             <button id="btnUploadTrigger" class="btn-upload">
-                <span>📁 Carregar Planilha</span>
+                <span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>Carregar Planilha</span>
             </button>
             <input type="file" id="arquivoExcel" accept=".xlsx,.xls" style="display: none;">
         </div>
@@ -43,10 +44,18 @@
     <nav class="abas" role="tablist" aria-label="Seções do painel">
         <button type="button" class="aba-btn ativa" data-aba="painel" role="tab" aria-selected="true">Painel</button>
         <button type="button" class="aba-btn" data-aba="historico" role="tab" aria-selected="false">Histórico</button>
-        <button type="button" class="aba-btn" data-aba="indicadores" role="tab" aria-selected="false">Indicadores</button>
+        <button type="button" class="aba-btn" data-aba="indicadores" role="tab" aria-selected="false" hidden>Indicadores</button>
     </nav>
 
     <div id="aba-painel" class="aba">
+
+    <!-- Progresso do dia -->
+    <section id="progressoDia" class="progresso-dia" hidden>
+        <span class="progresso-titulo">Progresso do dia</span>
+        <div class="progresso-barra" role="progressbar" aria-label="Volume carregado no dia" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+        <span class="progresso-percentual"></span>
+        <span class="progresso-resumo"></span>
+    </section>
 
     <!-- Resumo Geral / KPIs -->
     <section id="kpis" class="kpi-container">
@@ -60,7 +69,7 @@
         </div>
         <div class="kpi-card highlight">
             <span class="kpi-label">Cubagem Total</span>
-            <span class="kpi-value" id="kpi-cubagem">0.00 m³</span>
+            <span class="kpi-value" id="kpi-cubagem">0,00 m³</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Carregando agora</span>
@@ -95,7 +104,7 @@
                 <label>Doca <select id="histDoca"><option value="">Todas</option></select></label>
                 <label>Cliente <input type="search" id="histCliente" placeholder="Nome do cliente"></label>
                 <label>Operador <select id="histOperador"><option value="">Todos</option></select></label>
-                <button type="button" id="btnExportar" class="btn-exportar" disabled>📥 Exportar Excel</button>
+                <button type="button" id="btnExportar" class="btn-exportar" disabled><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Exportar Excel</button>
             </div>
             <p id="histContagem" class="hist-contagem" aria-live="polite"></p>
             <p id="histMensagem" class="hist-mensagem" hidden></p>

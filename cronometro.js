@@ -211,7 +211,7 @@ function pintarLinha(row, t) {
 function aplicar() {
   if (!diaAtual) return;
   const t = agora();
-  const cont = { carregando: 0, pausado: 0, concluido: 0, total: 0 };
+  const cont = { carregando: 0, pausado: 0, concluido: 0, total: 0, volumeTotal: 0, volumeConcluido: 0 };
 
   document.querySelectorAll("#painel .card").forEach((card) => {
     const linhas = card.querySelectorAll(".cliente[data-doca]");
@@ -221,6 +221,9 @@ function aplicar() {
     linhas.forEach((row) => {
       const est = pintarLinha(row, t);
       if (est !== "pendente") iniciadas++;
+      const volume = parseFloat(row.dataset.vol) || 0;
+      cont.volumeTotal += volume;
+      if (est === "concluido") cont.volumeConcluido += volume;
       cont.total++;
       if (est === "concluido") { concluidas++; cont.concluido++; }
       else if (est === "carregando") cont.carregando++;
@@ -235,7 +238,7 @@ function aplicar() {
       card.classList.toggle("doca-concluida", todas);
       prog.classList.toggle("completo", todas);
       prog.querySelector(".barra i").style.width = `${(concluidas / linhas.length) * 100}%`;
-      setTexto(prog.querySelector(".txt"), todas ? `✔ CONCLUÍDA (${concluidas} de ${linhas.length})` : `${concluidas} de ${linhas.length} concluídos`);
+      setTexto(prog.querySelector(".txt"), todas ? `✔ CONCLUÍDA (${concluidas} de ${linhas.length})` : `${concluidas} de ${linhas.length} ${linhas.length === 1 ? "concluído" : "concluídos"}`);
     }
   });
 
@@ -243,6 +246,27 @@ function aplicar() {
   setTexto(document.getElementById("kpi-carregando"), String(cont.carregando));
   setTexto(document.getElementById("kpi-pausadas"), String(cont.pausado));
   setTexto(document.getElementById("kpi-concluidas"), `${cont.concluido} / ${cont.total}`);
+
+  document.getElementById("kpi-carregando").closest(".kpi-card").classList.toggle("kpi-carregando-ativo", cont.carregando > 0);
+  document.getElementById("kpi-pausadas").closest(".kpi-card").classList.toggle("kpi-pausado-ativo", cont.pausado > 0);
+  pintarProgressoDia(cont);
+}
+
+// Faixa do topo: a barra mede o volume dos clientes já finalizados
+function pintarProgressoDia(cont) {
+  const faixa = document.getElementById("progressoDia");
+  faixa.hidden = cont.total === 0;
+  if (!cont.total) return;
+
+  const percentual = cont.volumeTotal > 0 ? Math.round((cont.volumeConcluido / cont.volumeTotal) * 100) : 0;
+  const barra = faixa.querySelector(".progresso-barra");
+  barra.setAttribute("aria-valuenow", String(percentual));
+  barra.querySelector("i").style.width = `${percentual}%`;
+  setTexto(faixa.querySelector(".progresso-percentual"), `${percentual}%`);
+  setTexto(
+    faixa.querySelector(".progresso-resumo"),
+    `${cont.concluido} de ${cont.total} ${cont.total === 1 ? "cliente" : "clientes"} · ${window.formatarM3(cont.volumeConcluido)} de ${window.formatarM3(cont.volumeTotal)} m³ carregados`
+  );
 }
 
 // ---------- Gravação ----------

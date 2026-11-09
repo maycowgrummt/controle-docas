@@ -11,6 +11,14 @@ const kpiCubagem = document.getElementById("kpi-cubagem");
 const SENHA_ADMIN = "9704";
 window.conferirSenhaAdmin = (digitada) => digitada === SENHA_ADMIN;
 
+// Volume no padrão brasileiro (1.522,41). Também usado pelo cronometro.js e pelo historico.js
+window.formatarM3 = (valor) => valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Ícones de linha do botão Modo operação
+const svgIcone = (caminhos) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${caminhos}</svg>`;
+const ROTULO_MODO_DESLIGADO = `${svgIcone('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')}Modo operação`;
+const ROTULO_MODO_LIGADO = `${svgIcone('<path d="M20 6 9 17l-5-5"/>')}Operando`;
+
 // --- Modo operação (botões do cronômetro) e abas ---
 // O modo fica guardado no próprio aparelho: o tablet do encarregado liga uma vez e continua assim.
 const CHAVE_MODO = "darnel_modo_operacao";
@@ -29,7 +37,7 @@ function aplicarModoOperacao() {
   document.body.classList.toggle("modo-operacao", modoOperacao);
   btnModoOperacao.classList.toggle("ativo", modoOperacao);
   btnModoOperacao.setAttribute("aria-pressed", String(modoOperacao));
-  btnModoOperacao.textContent = modoOperacao ? "✅ Operando" : "🖐 Modo operação";
+  btnModoOperacao.innerHTML = modoOperacao ? ROTULO_MODO_LIGADO : ROTULO_MODO_DESLIGADO;
 }
 
 btnModoOperacao.addEventListener("click", async () => {
@@ -39,7 +47,7 @@ btnModoOperacao.addEventListener("click", async () => {
       alert("Os cronômetros não carregaram. Verifique a internet e abra a página pelo endereço do site.");
       return;
     }
-    const liberado = await window.Cronometro.pedirSenha("🖐 Modo operação", "Libera os botões do cronômetro neste aparelho.");
+    const liberado = await window.Cronometro.pedirSenha("Modo operação","Libera os botões do cronômetro neste aparelho.");
     if (!liberado) return;
   }
 
@@ -308,7 +316,7 @@ function gerarPainel(dados) {
 
   kpiDocas.textContent = `${docasOcupadasCount} / 38`;
   kpiPedidos.textContent = totalPedidosGeral;
-  kpiCubagem.textContent = `${totalCubagemGeral.toFixed(2)} m³`;
+  kpiCubagem.textContent = `${window.formatarM3(totalCubagemGeral)} m³`;
 
   const listaOcupadas = [];
   const listaLivres = [];
@@ -394,7 +402,7 @@ function gerarPainel(dados) {
           ${
             info.ocupada
               ? `<span class="badge-pedidos">${info.pedidos} ${info.pedidos === 1 ? 'pedido' : 'pedidos'}</span>
-                 <span class="total-topo" style="color: ${corStatus}">${info.cubagem.toFixed(2)} m³</span>`
+                 <span class="total-topo" style="color: ${corStatus}">${window.formatarM3(info.cubagem)} m³</span>`
               : `<span class="badge-livre">LIVRE</span>`
           }
         </div>
@@ -420,7 +428,7 @@ function gerarPainel(dados) {
 
       <div class="card-footer">
         <span class="total-label">Volume Total</span>
-        <span class="total-valor" style="color: ${corStatus}">${info.cubagem.toFixed(2)} m³</span>
+        <span class="total-valor" style="color: ${corStatus}">${window.formatarM3(info.cubagem)} m³</span>
       </div>
     `;
 

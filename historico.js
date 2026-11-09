@@ -97,7 +97,7 @@ function desenhar() {
       <td>${esc(l.doca)}</td>
       <td class="hist-cliente">${esc(l.cliente)}</td>
       <td class="num">${l.pedidos}</td>
-      <td class="num">${l.volumeM3.toFixed(2)}</td>
+      <td class="num">${window.formatarM3(l.volumeM3)}</td>
       <td>${fmtHora(l.inicio)}</td>
       <td>${fmtHora(l.fim)}</td>
       <td class="num">${fmtDuracao(l.liquidoMs)}</td>
@@ -106,11 +106,11 @@ function desenhar() {
       <td>${esc(l.motivos) || "—"}</td>
       <td>${esc(l.iniciadoPor) || "—"}</td>
       <td>${esc(l.finalizadoPor) || "—"}</td>
-      <td><button type="button" class="btn-excluir" data-id="${esc(l.id)}">🗑 Excluir</button></td>
+      <td><button type="button" class="btn-excluir" data-id="${esc(l.id)}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Excluir</button></td>
     </tr>`).join("");
 
   const volume = visiveis.reduce((soma, l) => soma + l.volumeM3, 0);
-  contagem.textContent = `${visiveis.length} ${visiveis.length === 1 ? "cliente finalizado" : "clientes finalizados"} · ${volume.toFixed(2)} m³`;
+  contagem.textContent = `${visiveis.length} ${visiveis.length === 1 ? "cliente finalizado" : "clientes finalizados"} · ${window.formatarM3(volume)} m³`;
   btnExportar.disabled = visiveis.length === 0;
   mostrarMensagem(visiveis.length ? "" : "Nenhum cliente finalizado com esses filtros.");
 }
@@ -180,7 +180,7 @@ corpoTabela.addEventListener("click", async (ev) => {
   if (!linha) return;
 
   const liberado = await pedirSenha(
-    "🗑 Excluir registro",
+    "Excluir registro",
     `${linha.cliente} · Doca ${linha.doca} · ${diaBr(linha.dia)}. Esta exclusão não pode ser desfeita.`
   );
   if (!liberado) return;
