@@ -477,6 +477,23 @@ body.modo-operacao .cli-ctrl {
     color: #475569;
 }
 
+.btn-excluir {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid #FCA5A5;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #B91C1C;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.btn-excluir:hover { background: #FEF2F2; }
+.btn-excluir:focus-visible { outline: 3px solid #0F172A; outline-offset: 2px; }
+
 .hist-tabela .num { text-align: right; }
 .hist-tabela .hist-cliente { font-weight: 700; }
 

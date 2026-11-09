@@ -478,5 +478,5 @@ setInterval(() => {
 window.Cronometro = { aplicar, carregando: () => totalCarregando, pedirSenha };
 
 // Usado pela aba Histórico (historico.js)
-export { db, COLECAO, calcular, diaOperacional, fmtDuracao, fmtHora, esc, toast };
+export { db, COLECAO, calcular, diaOperacional, fmtDuracao, fmtHora, esc, toast, pedirSenha };
 aplicar();

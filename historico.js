@@ -4,8 +4,8 @@
 // o Excel com duas abas: "Detalhado" e "Resumo".
 // Os tempos vêm sempre da função calcular (cronometro.js).
 // ============================================================
-import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
-import { db, COLECAO, calcular, diaOperacional, fmtDuracao, fmtHora, esc, toast } from "./cronometro.js";
+import { collection, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+import { db, COLECAO, calcular, diaOperacional, fmtDuracao, fmtHora, esc, toast, pedirSenha } from "./cronometro.js";
 
 const MS_POR_DIA = 86400000;
 
@@ -29,7 +29,7 @@ let visiveis = [];  // os que passam nos filtros (é o que vai para o Excel)
 let datasEscolhidas = false; // enquanto ninguém mexer nas datas, a aba abre sempre no dia atual
 
 // ---------- Monta os dados de cada cliente ----------
-function linhaDe(d) {
+function linhaDe(d, id) {
   const c = calcular(d.eventos, Date.now());
   if (c.estado !== "concluido") return null;
 
@@ -38,6 +38,7 @@ function linhaDe(d) {
   c.pausas.forEach((p) => { motivos[p.motivo] = (motivos[p.motivo] || 0) + p.ms; });
 
   return {
+    id,
     dia: d.dia,
     doca: String(d.doca),
     cliente: d.cliente,
@@ -105,6 +106,7 @@ function desenhar() {
       <td>${esc(l.motivos) || "—"}</td>
       <td>${esc(l.iniciadoPor) || "—"}</td>
       <td>${esc(l.finalizadoPor) || "—"}</td>
+      <td><button type="button" class="btn-excluir" data-id="${esc(l.id)}">🗑 Excluir</button></td>
     </tr>`).join("");
 
   const volume = visiveis.reduce((soma, l) => soma + l.volumeM3, 0);
@@ -137,7 +139,7 @@ function assinar() {
   cancelarAssinatura = onSnapshot(
     query(collection(db, COLECAO), where("dia", ">=", de), where("dia", "<=", ate)),
     (snap) => {
-      todas = snap.docs.map((d) => linhaDe(d.data())).filter(Boolean).sort((a, b) => b.fim - a.fim);
+      todas = snap.docs.map((d) => linhaDe(d.data(), d.id)).filter(Boolean).sort((a, b) => b.fim - a.fim);
       desenhar();
     },
     (err) => {
@@ -169,6 +171,27 @@ new MutationObserver(() => {
   if (!datasEscolhidas) filtros.de.value = filtros.ate.value = diaOperacional();
   assinar();
 }).observe(el("aba-historico"), { attributes: true, attributeFilter: ["hidden"] });
+
+// ---------- Excluir registro ----------
+corpoTabela.addEventListener("click", async (ev) => {
+  const botao = ev.target.closest(".btn-excluir");
+  if (!botao) return;
+  const linha = visiveis.find((l) => l.id === botao.dataset.id);
+  if (!linha) return;
+
+  const liberado = await pedirSenha(
+    "🗑 Excluir registro",
+    `${linha.cliente} · Doca ${linha.doca} · ${diaBr(linha.dia)}. Esta exclusão não pode ser desfeita.`
+  );
+  if (!liberado) return;
+
+  try {
+    await deleteDoc(doc(db, COLECAO, linha.id));
+  } catch (e) {
+    console.error("Erro ao excluir registro:", e);
+    toast("Não foi possível excluir. Verifique a conexão e tente de novo.");
+  }
+});
 
 // ---------- Excel ----------
 const celDuracao = (ms) => ({ t: "n", v: ms / MS_POR_DIA, z: "[h]:mm:ss" });
