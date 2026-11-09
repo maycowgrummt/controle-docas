@@ -9,6 +9,7 @@
     flex-direction: column;
     gap: 6px;
     padding: 8px 10px;
+    background: #F8FAFC;
     transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -108,12 +109,7 @@ body.modo-operacao .cli-ctrl {
     font-weight: 700;
 }
 
-.btn-cron.confirmando {
-    background: #0F172A;
-    box-shadow: 0 0 0 3px #FACC15;
-}
-
-/* ----- Janela de senha ----- */
+/* ----- Janela de senha e de nome ----- */
 .senha-fundo {
     position: fixed;
     inset: 0;
@@ -165,6 +161,12 @@ body.modo-operacao .cli-ctrl {
     font-size: 1.4rem;
     letter-spacing: 0.3em;
     text-align: center;
+}
+
+.senha-campo.campo-nome {
+    font-size: 1.05rem;
+    letter-spacing: normal;
+    text-align: left;
 }
 
 .senha-campo:focus {
@@ -269,26 +271,7 @@ body.modo-operacao .cli-ctrl {
     box-shadow: 0 0 0 3px #16A34A, 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* ----- Operador e avisos ----- */
-.op-chip {
-    display: none;
-    position: fixed;
-    left: 12px;
-    bottom: 12px;
-    z-index: 50;
-    background: #0F172A;
-    color: #F8FAFC;
-    border: 1px solid #475569;
-    border-radius: 20px;
-    padding: 10px 16px;
-    font: inherit;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-body.modo-operacao .op-chip { display: block; }
-
+/* ----- Avisos ----- */
 .toast-cron {
     position: fixed;
     left: 50%;
@@ -515,7 +498,6 @@ body.modo-operacao .op-chip { display: block; }
 
 /* Cabeçalho enxuto */
 body:not(.modo-operacao) #btnUploadTrigger,
-body:not(.modo-operacao) #btnLimpar,
 body:not(.modo-operacao) .abas {
     display: none;
 }
@@ -562,27 +544,122 @@ body:not(.modo-operacao) .status-card-free .card-body {
     display: none;
 }
 
-/* Grade mais fina: card ocupado usa 3 colunas e doca livre usa 1.
-   O total de colunas é sempre múltiplo de 3, para os cards preencherem a largura toda. */
-@media (min-width: 420px) {
-    body:not(.modo-operacao) #painel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    body:not(.modo-operacao) #painel .card { grid-column: span 3; }
-    body:not(.modo-operacao) #painel .card.status-card-free { grid-column: span 1; }
-    body:not(.modo-operacao) #painel .empty-state { grid-column: 1 / -1; }
+/* Quantidade de cards ocupados por linha na TV */
+body:not(.modo-operacao) #painel .grupo-livres {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
 }
 
+body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: minmax(0, 1fr); }
+
 @media (min-width: 720px) {
-    body:not(.modo-operacao) #painel { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1060px) {
-    body:not(.modo-operacao) #painel { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+    body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1400px) {
-    body:not(.modo-operacao) #painel { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+    body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1760px) {
-    body:not(.modo-operacao) #painel { grid-template-columns: repeat(15, minmax(0, 1fr)); }
+    body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
+
+/* ============================================================
+   Aparência geral (TV e tablets)
+   ============================================================ */
+
+/* Relógio e horário da planilha no cabeçalho */
+header {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.header-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+}
+
+.relogio {
+    font-size: 1.6rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #FFFFFF;
+}
+
+.planilha-atualizada {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #94A3B8;
+}
+
+/* Cards brancos: a cor do status fica só na faixa, no ponto e no volume */
+.card.status-card-free,
+.card.status-card-warning,
+.card.status-card-critical {
+    background: #FFFFFF;
+    border-color: var(--border-color);
+}
+
+/* Grupos de docas: linhas retas, com os cards de cada linha na mesma altura */
+#painel .grupo-docas {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+/* Na TV, doca com 2 ou mais clientes mostra a lista em duas colunas */
+body:not(.modo-operacao) .lista-clientes:has(.cliente:nth-child(2)) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body:not(.modo-operacao) .cli-topo { flex-wrap: wrap; }
+
+/* Modo operação: botão ao lado do nome do cliente */
+body.modo-operacao .cliente[data-doca] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: center;
+}
+
+body.modo-operacao .cli-topo,
+body.modo-operacao .cli-info { grid-column: 1; }
+
+body.modo-operacao .cli-topo { flex-wrap: wrap; }
+
+body.modo-operacao .cli-ctrl {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+/* Cliente pendente não tem linha de informação: centraliza o nome com o botão */
+body.modo-operacao .cli-pendente .cli-ctrl { grid-row: 1; }
+
+body.modo-operacao .btn-cron {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 0.82rem;
+}
+
+body.modo-operacao .btn-reabrir { min-height: 36px; }
+
+/* Em andamento há dois botões: eles ganham uma linha própria */
+body.modo-operacao .cli-carregando .cli-ctrl,
+body.modo-operacao .cli-pausado .cli-ctrl {
+    grid-column: 1 / -1;
+    grid-row: auto;
+}
+
+body.modo-operacao .cli-carregando .btn-cron,
+body.modo-operacao .cli-pausado .btn-cron { flex: 1; }
+
+body.modo-operacao .cli-motivos { grid-column: 1 / -1; }

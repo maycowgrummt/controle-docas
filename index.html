@@ -22,6 +22,11 @@
             </div>
         </div>
 
+        <div class="header-status">
+            <span id="relogio" class="relogio"></span>
+            <span id="planilhaAtualizada" class="planilha-atualizada"></span>
+        </div>
+
         <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
             <button id="btnModoOperacao" class="btn-operacao" type="button" aria-pressed="false" title="Mostra os botões de iniciar, pausar e finalizar carregamento">
                 🖐 Modo operação
@@ -31,11 +36,7 @@
                 <span>📁 Carregar Planilha</span>
             </button>
             <input type="file" id="arquivoExcel" accept=".xlsx,.xls" style="display: none;">
-
-            <button id="btnLimpar" class="btn-clear" title="Limpar dados salvos">
-                🗑️ Limpar
-            </button>
-        </div> 
+        </div>
     </header>
 
     <!-- Abas -->

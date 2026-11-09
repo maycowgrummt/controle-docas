@@ -36,7 +36,8 @@ const firebaseConfig = {
 const COLECAO = "cronometros";
 const HORA_VIRADA_DIA = 4; // antes das 04:00 ainda conta como o dia anterior (turno da noite)
 const MOTIVOS_PAUSA = ["Empilhadeira", "Conferência", "Motorista", "Outro"];
-const CHAVE_OPERADOR = "darnel_operador";
+const CHAVE_OPERADORES = "darnel_operadores"; // nomes já usados neste aparelho (viram sugestões)
+const MAX_SUGESTOES = 20;
 
 
 const app = initializeApp(firebaseConfig);
@@ -160,7 +161,7 @@ const ROTULOS = {
 };
 
 function btn(acao, classe) {
-  return `<button type="button" class="btn-cron ${classe}" data-acao="${acao}" data-rotulo="${ROTULOS[acao]}">${ROTULOS[acao]}</button>`;
+  return `<button type="button" class="btn-cron ${classe}" data-acao="${acao}">${ROTULOS[acao]}</button>`;
 }
 
 function controlesDe(estado) {
@@ -189,7 +190,7 @@ function pintarLinha(row, t) {
   row.dataset.chave = chave;
   const c = calcular(registros[chave]?.eventos, t);
 
-  // Só reconstrói os botões quando algo mudou (preserva o foco e o "CONFIRMAR?")
+  // Só reconstrói os botões quando algo mudou (preserva o foco e a lista de motivos)
   const assinatura = `${c.estado}|${c.motivoAtual || ""}|${c.fim || ""}`;
   if (row.dataset.assinatura !== assinatura) {
     row.dataset.assinatura = assinatura;
@@ -245,23 +246,13 @@ function aplicar() {
 }
 
 // ---------- Gravação ----------
-function obterOperador() {
-  let nome = "";
-  try { nome = localStorage.getItem(CHAVE_OPERADOR) || ""; } catch (e) { /* sem storage */ }
-  if (!nome) {
-    nome = (prompt("Quem está operando? Digite seu nome:") || "").trim();
-    if (nome) {
-      try { localStorage.setItem(CHAVE_OPERADOR, nome); } catch (e) { /* ok */ }
-      atualizarChipOperador();
-    }
-  }
-  return nome;
+// Pausar e Retomar não perguntam o nome: usam quem mexeu por último neste cronômetro
+function ultimoOperador(row) {
+  const eventos = [...(registros[row.dataset.chave]?.eventos || [])].sort((a, b) => a.t - b.t);
+  return eventos.at(-1)?.op || "Não informado";
 }
 
-async function registrar(row, tipo, extra = {}) {
-  const operador = obterOperador();
-  if (!operador) return;
-
+async function registrar(row, tipo, extra = {}, operador = ultimoOperador(row)) {
   const evento = { tipo, t: agora(), op: operador, ...extra };
   try {
     // arrayUnion + merge: dois aparelhos clicando ao mesmo tempo não apagam o evento um do outro.
@@ -295,29 +286,13 @@ function abrirMotivos(row) {
   row.appendChild(div);
 }
 
-// Toque duplo para ações sensíveis: 1º toque vira "CONFIRMAR?" por 3 segundos
-function precisaConfirmar(botao) {
-  if (botao.dataset.confirmando === "1") return false;
-  botao.dataset.confirmando = "1";
-  botao.textContent = "CONFIRMAR?";
-  botao.classList.add("confirmando");
-  setTimeout(() => {
-    if (botao.isConnected) {
-      botao.dataset.confirmando = "0";
-      botao.textContent = botao.dataset.rotulo;
-      botao.classList.remove("confirmando");
-    }
-  }, 3000);
-  return true;
-}
+// Janela com um campo só (senha ou nome). Responde o texto digitado, ou null se cancelar.
+// validar devolve a mensagem de erro, ou "" quando o texto estiver certo.
+let janelaAberta = false;
 
-// Janela que pede a senha de administração (usada pelo botão Modo operação, no app.js).
-// Responde true só com a senha certa; false se cancelar.
-let janelaSenhaAberta = false;
-
-function pedirSenha(titulo, detalhe) {
-  if (janelaSenhaAberta) return Promise.resolve(false);
-  janelaSenhaAberta = true;
+function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "", sugestoes = [], validar }) {
+  if (janelaAberta) return Promise.resolve(null);
+  janelaAberta = true;
 
   return new Promise((resolve) => {
     const fundo = document.createElement("div");
@@ -326,8 +301,9 @@ function pedirSenha(titulo, detalhe) {
       <form class="senha-janela" role="dialog" aria-modal="true" aria-labelledby="senhaTitulo">
         <h2 id="senhaTitulo" class="senha-titulo"></h2>
         <p class="senha-detalhe"></p>
-        <label class="senha-rotulo" for="senhaCampo">Senha de administração</label>
-        <input id="senhaCampo" class="senha-campo" type="password" inputmode="numeric" autocomplete="off">
+        <label class="senha-rotulo" for="senhaCampo">${rotulo}</label>
+        <input id="senhaCampo" class="senha-campo ${classeCampo}" type="${tipo}" inputmode="${inputmode}" maxlength="40" autocomplete="off" list="senhaSugestoes">
+        <datalist id="senhaSugestoes">${sugestoes.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
         <p class="senha-erro" role="alert"></p>
         <div class="senha-botoes">
           <button type="button" class="btn-senha cancelar">Cancelar</button>
@@ -341,25 +317,27 @@ function pedirSenha(titulo, detalhe) {
     const campo = fundo.querySelector(".senha-campo");
     const erro = fundo.querySelector(".senha-erro");
 
-    const fechar = (ok) => {
+    const fechar = (resposta) => {
       fundo.remove();
-      janelaSenhaAberta = false;
-      resolve(ok);
+      janelaAberta = false;
+      resolve(resposta);
     };
 
     fundo.querySelector("form").addEventListener("submit", (ev) => {
       ev.preventDefault();
-      if (window.conferirSenhaAdmin(campo.value)) {
-        fechar(true);
+      const texto = campo.value.trim();
+      const problema = validar(texto);
+      if (!problema) {
+        fechar(texto);
       } else {
-        erro.textContent = "Senha incorreta. Tente de novo.";
+        erro.textContent = problema;
         campo.value = "";
         campo.focus();
       }
     });
-    fundo.querySelector(".cancelar").addEventListener("click", () => fechar(false));
+    fundo.querySelector(".cancelar").addEventListener("click", () => fechar(null));
     fundo.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape") fechar(false);
+      if (ev.key === "Escape") fechar(null);
     });
 
     document.body.appendChild(fundo);
@@ -367,7 +345,51 @@ function pedirSenha(titulo, detalhe) {
   });
 }
 
-document.addEventListener("click", (ev) => {
+// Senha de administração (usada pelo botão Modo operação, no app.js)
+async function pedirSenha(titulo, detalhe) {
+  const resposta = await abrirJanela({
+    titulo,
+    detalhe,
+    rotulo: "Senha de administração",
+    tipo: "password",
+    inputmode: "numeric",
+    validar: (texto) => (window.conferirSenhaAdmin(texto) ? "" : "Senha incorreta. Tente de novo.")
+  });
+  return resposta !== null;
+}
+
+function nomesSugeridos() {
+  try {
+    return JSON.parse(localStorage.getItem(CHAVE_OPERADORES)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Nome de quem está fazendo a ação. Responde null se cancelar.
+async function pedirNome(acao, row) {
+  const sugestoes = nomesSugeridos();
+  const nome = await abrirJanela({
+    titulo: ROTULOS[acao],
+    detalhe: `${row.dataset.cliente} · Doca ${row.dataset.doca}`,
+    rotulo: "Seu nome",
+    tipo: "text",
+    inputmode: "text",
+    classeCampo: "campo-nome",
+    sugestoes,
+    validar: (texto) => (/\p{L}/u.test(texto) ? "" : "Digite o nome da pessoa, com letras.")
+  });
+  if (nome) {
+    const atualizados = [nome, ...sugestoes.filter((n) => n !== nome)].slice(0, MAX_SUGESTOES);
+    try { localStorage.setItem(CHAVE_OPERADORES, JSON.stringify(atualizados)); } catch (e) { /* ok */ }
+  }
+  return nome;
+}
+
+// Ações que pedem o nome de quem clicou, e o evento que cada uma grava
+const EVENTO_COM_NOME = { iniciar: "inicio", finalizar: "fim", reabrir: "reabrir" };
+
+document.addEventListener("click", async (ev) => {
   // Os botões só reagem com o "Modo operação" ligado no cabeçalho (controlado pelo app.js)
   if (!document.body.classList.contains("modo-operacao")) return;
   const botao = ev.target.closest("[data-acao]");
@@ -375,14 +397,19 @@ document.addEventListener("click", (ev) => {
   const row = botao.closest(".cliente[data-doca]");
   if (!row) return;
 
-  switch (botao.dataset.acao) {
-    case "iniciar":   registrar(row, "inicio"); break;
+  const acao = botao.dataset.acao;
+
+  if (EVENTO_COM_NOME[acao]) {
+    const nome = await pedirNome(acao, row);
+    if (nome) registrar(row, EVENTO_COM_NOME[acao], {}, nome);
+    return;
+  }
+
+  switch (acao) {
     case "retomar":   registrar(row, "retomada"); break;
     case "pausar":    abrirMotivos(row); break;
     case "motivo":    registrar(row, "pausa", { motivo: botao.dataset.motivo }); break;
     case "cancelar-motivo": row.querySelector(".cli-motivos")?.remove(); break;
-    case "finalizar": if (!precisaConfirmar(botao)) registrar(row, "fim"); break;
-    case "reabrir":   if (!precisaConfirmar(botao)) registrar(row, "reabrir"); break;
   }
 });
 
@@ -393,30 +420,6 @@ function toast(msg) {
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 5000);
-}
-
-function atualizarChipOperador() {
-  const chip = document.getElementById("chipOperador");
-  if (!chip) return;
-  let nome = "";
-  try { nome = localStorage.getItem(CHAVE_OPERADOR) || ""; } catch (e) { /* ok */ }
-  chip.textContent = nome ? `👤 ${nome} (trocar)` : "👤 Informar operador";
-}
-
-function criarChipOperador() {
-  const chip = document.createElement("button");
-  chip.id = "chipOperador";
-  chip.type = "button";
-  chip.className = "op-chip";
-  chip.addEventListener("click", () => {
-    const nome = (prompt("Quem está operando? Digite seu nome:") || "").trim();
-    if (nome) {
-      try { localStorage.setItem(CHAVE_OPERADOR, nome); } catch (e) { /* ok */ }
-      atualizarChipOperador();
-    }
-  });
-  document.body.appendChild(chip);
-  atualizarChipOperador();
 }
 
 // ---------- Dados em tempo real ----------
@@ -463,8 +466,6 @@ async function sincronizarRelogio() {
 }
 
 // ---------- Início ----------
-criarChipOperador();
-
 assinar();
 sincronizarRelogio();
 

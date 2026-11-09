@@ -1,6 +1,5 @@
 const input = document.getElementById("arquivoExcel");
 const btnUploadTrigger = document.getElementById("btnUploadTrigger");
-const btnLimpar = document.getElementById("btnLimpar");
 const painel = document.getElementById("painel");
 
 // Elementos de KPI
@@ -110,6 +109,7 @@ async function carregarDadosNuvem() {
   const json = await resp.json();
   // Aceita tanto { dados: [...] } quanto um array direto
   if (Array.isArray(json)) return json;
+  mostrarPlanilhaAtualizada(json?.atualizadoEm);
   if (json && Array.isArray(json.dados)) return json.dados;
   return [];
 }
@@ -139,24 +139,27 @@ btnUploadTrigger.addEventListener("click", () => {
 
 input.addEventListener("change", lerArquivo);
 
-btnLimpar.addEventListener("click", async () => {
-  const senhaDigitada = prompt("Digite a senha de administração para limpar os dados:");
-  if (senhaDigitada === null) return;
+// --- Relógio e horário da última planilha (cabeçalho) ---
+const FUSO = "America/Sao_Paulo";
+const relogio = document.getElementById("relogio");
+const planilhaAtualizada = document.getElementById("planilhaAtualizada");
 
-  if (window.conferirSenhaAdmin(senhaDigitada)) {
-    try {
-      await salvarDadosNuvem([]);
-      localStorage.removeItem(CHAVE_CACHE);
-      alert("Dados limpos com sucesso para todos os computadores!");
-      location.reload();
-    } catch (e) {
-      console.error(e);
-      alert("Não foi possível limpar os dados na nuvem. Verifique a internet e a chave do JSONBin.");
-    }
-  } else {
-    alert("Senha incorreta! Ação negada.");
-  }
-});
+function atualizarRelogio() {
+  relogio.textContent = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: FUSO });
+}
+
+function mostrarPlanilhaAtualizada(iso) {
+  const data = new Date(iso);
+  if (!iso || isNaN(data)) return;
+  const dia = (d) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: FUSO });
+  const hora = data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: FUSO });
+  planilhaAtualizada.textContent = dia(data) === dia(new Date())
+    ? `Planilha atualizada às ${hora}`
+    : `Planilha atualizada em ${dia(data)} às ${hora}`;
+}
+
+atualizarRelogio();
+setInterval(atualizarRelogio, 5000);
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
@@ -207,6 +210,7 @@ function lerArquivo(event) {
 
     try {
       await salvarDadosNuvem(dados);
+      mostrarPlanilhaAtualizada(new Date().toISOString());
       alert("Planilha enviada com sucesso! Pressione F5 nos demais computadores para atualizar.");
     } catch (err) {
       console.error(err);
@@ -238,8 +242,17 @@ function escHtml(texto) {
   }[c]));
 }
 
+function criarGrupoDocas(classe) {
+  const grupo = document.createElement("div");
+  grupo.className = `grupo-docas ${classe}`;
+  painel.appendChild(grupo);
+  return grupo;
+}
+
 function gerarPainel(dados) {
   painel.innerHTML = "";
+  const grupoOcupadas = criarGrupoDocas("grupo-ocupadas");
+  const grupoLivres = criarGrupoDocas("grupo-livres");
 
   const docasOcupadasMap = {};
   let totalPedidosGeral = 0;
@@ -411,7 +424,7 @@ function gerarPainel(dados) {
       </div>
     `;
 
-    painel.appendChild(card);
+    (info.ocupada ? grupoOcupadas : grupoLivres).appendChild(card);
   });
 
   // Pinta os estados do cronômetro nos cards recém-criados
