@@ -39,8 +39,9 @@ const HORA_VIRADA_DIA = 4; // antes das 04:00 ainda conta como o dia anterior (t
 const MOTIVOS_PAUSA = ["Empilhadeira", "Conferência", "Motorista", "Outro"];
 const CHAVE_OPERADORES = "darnel_operadores"; // nomes já usados neste aparelho (viram sugestões)
 const MAX_SUGESTOES = 20;
-const DOC_STATUS_DOCAS = "_docas"; // documento com as docas em manutenção ou bloqueadas
-const TIPOS_INDISPONIVEL = { manutencao: "Manutenção", bloqueada: "Bloqueada" };
+const DOC_STATUS_DOCAS = "_docas"; // documento com as docas em manutenção, bloqueadas ou com restrição
+const TIPOS_STATUS_DOCA = { manutencao: "Manutenção", bloqueada: "Bloqueada", restricao: "Com restrição" };
+const TIPO_OPERANDO = "restricao"; // este status mostra o aviso, mas a doca continua operando
 
 
 const app = initializeApp(firebaseConfig);
@@ -53,7 +54,7 @@ let offsetMs = 0; // diferença entre o relógio do aparelho e o do servidor
 let diaAtual = null;
 let cancelarAssinatura = null;
 const registros = {}; // id do documento -> dados
-let statusDocas = {}; // doca -> { tipo, motivo, nome, t } das docas indisponíveis
+let statusDocas = {}; // doca -> { tipo, motivo, nome, t } das docas com algum status
 let totalCarregando = 0; // quantos clientes estão carregando agora (usado pelo auto-scroll)
 
 // ---------- Utilidades ----------
@@ -188,6 +189,11 @@ function infoDe(c) {
   return "";
 }
 
+function docaIndisponivel(doca) {
+  const status = statusDocas[doca];
+  return !!status && status.tipo !== TIPO_OPERANDO;
+}
+
 function setTexto(el, txt) {
   if (el && el.textContent !== txt) el.textContent = txt;
 }
@@ -198,7 +204,7 @@ function pintarLinha(row, t) {
   const c = calcular(registros[chave]?.eventos, t);
 
   // Só reconstrói os botões quando algo mudou (preserva o foco e a lista de motivos)
-  const indisponivel = !!statusDocas[row.dataset.doca];
+  const indisponivel = docaIndisponivel(row.dataset.doca);
   const assinatura = `${c.estado}|${c.motivoAtual || ""}|${c.fim || ""}|${indisponivel}`;
   if (row.dataset.assinatura !== assinatura) {
     row.dataset.assinatura = assinatura;
@@ -224,18 +230,19 @@ function pintarStatusDoca(card) {
 
   card.classList.toggle("doca-manutencao", status?.tipo === "manutencao");
   card.classList.toggle("doca-bloqueada", status?.tipo === "bloqueada");
+  card.classList.toggle("doca-restricao", status?.tipo === "restricao");
 
   const faixa = card.querySelector(".doca-status");
   faixa.hidden = !status;
   const detalhe = status
     ? [status.motivo, `${status.nome} às ${fmtHora(status.t)}`].filter(Boolean).join(" · ")
     : "";
-  setTexto(faixa.querySelector(".doca-status-tipo"), status ? TIPOS_INDISPONIVEL[status.tipo] : "");
+  setTexto(faixa.querySelector(".doca-status-tipo"), status ? TIPOS_STATUS_DOCA[status.tipo] : "");
   setTexto(faixa.querySelector(".doca-status-detalhe"), detalhe);
-  card.title = status ? `${TIPOS_INDISPONIVEL[status.tipo]}: ${detalhe}` : "";
+  card.title = status ? `${TIPOS_STATUS_DOCA[status.tipo]}: ${detalhe}` : "";
 
   const botao = card.querySelector("[data-doca-status]");
-  botao.textContent = status ? "Liberar doca" : "Indisponibilizar doca";
+  botao.textContent = status ? "Liberar doca" : "Alterar status da doca";
   botao.classList.toggle("liberar", !!status);
 }
 
@@ -465,7 +472,7 @@ document.addEventListener("click", async (ev) => {
     const nome = await pedirNome(acao, row);
     if (!nome) return;
     // A doca pode ter ficado indisponível enquanto o nome era digitado
-    if (acao === "iniciar" && statusDocas[row.dataset.doca]) {
+    if (acao === "iniciar" && docaIndisponivel(row.dataset.doca)) {
       toast("Esta doca ficou indisponível e o carregamento não foi iniciado.");
       return;
     }
@@ -495,11 +502,12 @@ async function indisponibilizarDoca(doca) {
   let extras = null;
   const nome = await perguntarNome({
     titulo: `Doca ${doca}`,
-    detalhe: "Marcar esta doca como indisponível.",
+    detalhe: "Escolha a situação desta doca.",
     extraHtml: `
       <div class="doca-tipos" role="radiogroup" aria-label="Situação da doca">
         <label><input type="radio" name="docaTipo" value="manutencao" checked> Manutenção</label>
         <label><input type="radio" name="docaTipo" value="bloqueada"> Bloqueada</label>
+        <label><input type="radio" name="docaTipo" value="restricao"> Com restrição (continua operando)</label>
       </div>
       <label class="senha-rotulo" for="docaMotivo">Motivo (opcional)</label>
       <input id="docaMotivo" class="senha-campo campo-nome doca-motivo" type="text" maxlength="60" autocomplete="off">`,
@@ -517,7 +525,7 @@ async function liberarDoca(doca) {
   const status = statusDocas[doca];
   const nome = await perguntarNome({
     titulo: `Liberar Doca ${doca}`,
-    detalhe: `Situação atual: ${TIPOS_INDISPONIVEL[status.tipo]}.`
+    detalhe: `Situação atual: ${TIPOS_STATUS_DOCA[status.tipo]}.`
   });
   if (nome) gravarStatusDoca(doca, deleteField());
 }

@@ -602,6 +602,7 @@ body:not(.modo-operacao) #painel .grupo-ocupadas { grid-template-columns: minmax
 
 .doca-manutencao .doca-status { background: #6D28D9; }
 .doca-bloqueada .doca-status { background: #334155; }
+.doca-restricao .doca-status { background: #0F766E; } /* só a faixa muda: a doca continua operando */
 
 /* A faixa e o ponto vêm com a cor inline do app.js; aqui a situação da doca tem prioridade */
 .doca-manutencao .card-stripe,
@@ -658,9 +659,12 @@ body.modo-operacao .doca-acoes {
 
 .doca-tipos {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 12px;
 }
+
+.doca-tipos label:last-child { flex-basis: 100%; }
 
 .doca-tipos label {
     flex: 1;

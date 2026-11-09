@@ -433,7 +433,7 @@ function gerarPainel(dados) {
       </div>
 
       <div class="doca-acoes">
-        <button type="button" class="btn-doca-status" data-doca-status>Indisponibilizar doca</button>
+        <button type="button" class="btn-doca-status" data-doca-status>Alterar status da doca</button>
       </div>
 
       <div class="card-footer">
