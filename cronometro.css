@@ -925,3 +925,179 @@ body.modo-operacao .cli-motivos { grid-column: 1 / -1; }
 .card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .doca-progresso.completo {
     color: #14532D !important;
 }
+/* ============================================================
+   Acabamento visual (aprovado na prévia de 10/11/2026)
+   ============================================================ */
+
+/* Fundo mais profundo, com uma luz suave no topo */
+:root { --bg-body: #0E1626; }
+
+body {
+    background-image: radial-gradient(1200px 600px at 50% -200px, #1B2A44 0%, rgba(14, 22, 38, 0) 70%);
+    background-attachment: fixed;
+}
+
+header {
+    background-color: #080C16;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+}
+
+/* Sombras suaves e cantos iguais */
+.card {
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.kpi-card,
+.progresso-dia {
+    border-radius: 12px;
+    border-color: transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.cliente { border-radius: 8px; }
+.cli-nome { font-weight: 700; }
+
+/* TV: número da doca e tempo maiores, para ler de longe */
+body:not(.modo-operacao) .card-header h2 { font-size: 1.65rem; letter-spacing: -0.5px; }
+body:not(.modo-operacao) .status-dot { width: 16px; height: 16px; }
+body:not(.modo-operacao) .total-topo { font-size: 1.2rem; }
+body:not(.modo-operacao) .badge-pedidos { font-size: 0.82rem; }
+body:not(.modo-operacao) .cli-tempo { font-size: 1.4rem; }
+
+/* TV: docas livres numa faixa compacta (os cards completos continuam no Modo operação) */
+.livres-faixa { display: none; }
+
+body:not(.modo-operacao) #painel .grupo-livres { display: none; }
+
+body:not(.modo-operacao) .livres-faixa {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.livres-titulo {
+    margin-right: 6px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #94A3B8;
+}
+
+.livres-total {
+    margin-left: 4px;
+    font-size: 1rem;
+    color: #4ADE80;
+}
+
+.chip-doca {
+    min-width: 44px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #BBF7D0;
+    color: #14532D;
+    font-size: 1rem;
+    font-weight: 800;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.7s ease, color 0.7s ease;
+}
+
+.chip-doca.manutencao { background: #6D28D9; color: #FFFFFF; }
+.chip-doca.bloqueada  { background: #334155; color: #FFFFFF; }
+.chip-doca.restricao  { box-shadow: inset 0 -4px 0 #0F766E; }
+
+/* Legenda das cores no fim do painel */
+.legenda {
+    width: 96%;
+    max-width: 1780px;
+    margin: 22px auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94A3B8;
+}
+
+.legenda span { display: inline-flex; align-items: center; gap: 7px; }
+.legenda i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+
+/* Cores mudam aos poucos */
+.card,
+.card-stripe,
+.status-dot,
+.kpi-card,
+.total-topo,
+.cliente[data-doca] {
+    transition: background-color 0.7s ease, border-color 0.7s ease, box-shadow 0.7s ease, color 0.7s ease, transform 0.2s ease;
+}
+
+/* Brilho rápido quando o último cliente da doca é finalizado (classe posta pelo cronometro.js) */
+.card.acabou { animation: doca-acabou 1.6s ease-out; }
+
+@keyframes doca-acabou {
+    0%   { transform: scale(1);     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.75); }
+    25%  { transform: scale(1.025); }
+    100% { transform: scale(1);     box-shadow: 0 0 0 22px rgba(34, 197, 94, 0); }
+}
+
+/* Cards entram um a um quando a planilha é desenhada (classe posta pelo app.js) */
+.card.entrando,
+.livres-faixa.entrando {
+    animation: card-entra 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+@keyframes card-entra {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Contorno dos cards enquanto a planilha chega */
+.esqueleto {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.esq-card {
+    height: 180px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #1C2840 25%, #2A3956 37%, #1C2840 63%);
+    background-size: 400% 100%;
+    animation: esq-brilho 1.3s ease infinite;
+}
+
+@keyframes esq-brilho {
+    from { background-position: 100% 50%; }
+    to   { background-position: 0 50%; }
+}
+
+/* Avisos deslizam para dentro e para fora */
+.toast-cron { animation: aviso-entra 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.toast-cron.saindo { animation: aviso-sai 0.3s ease forwards; }
+
+@keyframes aviso-entra {
+    from { opacity: 0; transform: translate(-50%, 24px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes aviso-sai {
+    to { opacity: 0; transform: translate(-50%, 16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card, .card-stripe, .status-dot, .kpi-card, .total-topo, .cliente[data-doca], .chip-doca { transition: none; }
+    .card.acabou, .card.entrando, .livres-faixa.entrando, .esq-card, .toast-cron, .toast-cron.saindo { animation: none; }
+}

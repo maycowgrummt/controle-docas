@@ -14,6 +14,50 @@ window.conferirSenhaAdmin = (digitada) => digitada === SENHA_ADMIN;
 // Volume no padrão brasileiro (1.522,41). Também usado pelo cronometro.js e pelo historico.js
 window.formatarM3 = (valor) => valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Indicadores: o número conta até o valor novo em vez de pular. Também usado pelo cronometro.js
+const MOVIMENTO_REDUZIDO = window.matchMedia("(prefers-reduced-motion: reduce)");
+const NUMERO_BR = /\d[\d.]*(?:,\d+)?/g; // 14 · 5 / 38 · 1.522,41
+window.mostrarNumero = (el, texto) => {
+  if (!el) return;
+  texto = String(texto);
+  if (el.dataset.alvo === texto) return;
+  const anterior = el.dataset.alvo ?? el.textContent;
+  el.dataset.alvo = texto;
+
+  const de = anterior.match(NUMERO_BR) || [];
+  const para = texto.match(NUMERO_BR) || [];
+  const molde = (s) => s.replace(NUMERO_BR, "#");
+  // Só anima quando o texto tem o mesmo formato (ex.: "2 / 8" para "3 / 8")
+  if (MOVIMENTO_REDUZIDO.matches || !para.length || de.length !== para.length || molde(anterior) !== molde(texto)) {
+    el.textContent = texto;
+    return;
+  }
+
+  const ler = (s) => parseFloat(s.replace(/\./g, "").replace(",", "."));
+  const casas = (s) => (s.split(",")[1] || "").length;
+  const inicio = performance.now();
+  const DURACAO_MS = 700;
+  const passo = (instante) => {
+    if (el.dataset.alvo !== texto) return; // chegou um valor mais novo, que tem a própria animação
+    const p = Math.min(1, (instante - inicio) / DURACAO_MS);
+    if (p >= 1) { el.textContent = texto; return; }
+    const suave = 1 - Math.pow(1 - p, 3);
+    let i = 0;
+    el.textContent = texto.replace(NUMERO_BR, (alvo) => {
+      const v = ler(de[i]) + (ler(alvo) - ler(de[i])) * suave;
+      const c = casas(alvo);
+      i++;
+      return v.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
+    });
+    requestAnimationFrame(passo);
+  };
+  requestAnimationFrame(passo);
+  // Garantia: com a aba em segundo plano a animação não roda; o valor final aparece mesmo assim
+  setTimeout(() => {
+    if (el.dataset.alvo === texto) el.textContent = texto;
+  }, DURACAO_MS + 100);
+};
+
 // Ícones de linha do botão Modo operação
 const svgIcone = (caminhos) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${caminhos}</svg>`;
 const ROTULO_MODO_DESLIGADO = `${svgIcone('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')}Modo operação`;
@@ -208,6 +252,14 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
     }
   }
+
+  // Nada para mostrar: troca o contorno dos cards pelo aviso de planilha vazia
+  const esqueleto = painel.querySelector(".esqueleto");
+  if (esqueleto) {
+    esqueleto.remove();
+    const vazio = painel.querySelector(".empty-state");
+    if (vazio) vazio.hidden = false;
+  }
 });
 
 function lerArquivo(event) {
@@ -329,9 +381,9 @@ function gerarPainel(dados) {
 
   const docasOcupadasCount = Object.keys(docasOcupadasMap).length;
 
-  kpiDocas.textContent = `${docasOcupadasCount} / 38`;
-  kpiPedidos.textContent = totalPedidosGeral;
-  kpiCubagem.textContent = `${window.formatarM3(totalCubagemGeral)} m³`;
+  window.mostrarNumero(kpiDocas, `${docasOcupadasCount} / 38`);
+  window.mostrarNumero(kpiPedidos, String(totalPedidosGeral));
+  window.mostrarNumero(kpiCubagem, `${window.formatarM3(totalCubagemGeral)} m³`);
 
   const listaOcupadas = [];
   const listaLivres = [];
@@ -459,6 +511,26 @@ function gerarPainel(dados) {
 
     (info.ocupada ? grupoOcupadas : grupoLivres).appendChild(card);
   });
+
+  // TV: docas livres numa faixa compacta. O cronometro.js pinta o status e a contagem.
+  let faixaLivres = null;
+  if (listaLivres.length) {
+    faixaLivres = document.createElement("div");
+    faixaLivres.className = "livres-faixa";
+    faixaLivres.innerHTML =
+      `<span class="livres-titulo">Docas livres<b class="livres-total">${listaLivres.length}</b></span>` +
+      listaLivres.map(({ doca }) => `<span class="chip-doca" data-doca="${escHtml(doca)}">${escHtml(doca)}</span>`).join("");
+    painel.insertBefore(faixaLivres, grupoLivres);
+  }
+
+  // Cards entram um a um (no máximo 12 passos de espera, para não demorar)
+  const entrando = [...grupoOcupadas.querySelectorAll(".card")];
+  if (faixaLivres) entrando.push(faixaLivres);
+  entrando.forEach((el, i) => {
+    el.style.setProperty("--i", Math.min(i, 12));
+    el.classList.add("entrando");
+  });
+  setTimeout(() => entrando.forEach((el) => el.classList.remove("entrando")), 2000);
 
   // Pinta os estados do cronômetro nos cards recém-criados
   if (window.Cronometro) window.Cronometro.aplicar();

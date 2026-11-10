@@ -61,7 +61,7 @@
     <section id="kpis" class="kpi-container">
         <div class="kpi-card">
             <span class="kpi-label">Docas Ocupadas</span>
-            <span class="kpi-value" id="kpi-docas">0</span>
+            <span class="kpi-value" id="kpi-docas">0 / 38</span>
         </div>
         <div class="kpi-card">
             <span class="kpi-label">Total de Pedidos</span>
@@ -87,12 +87,26 @@
 
     <!-- Area Principal do Painel -->
     <main id="painel">
-        <div class="empty-state">
+        <!-- Contorno dos cards enquanto a planilha chega (o app.js troca pelos cards) -->
+        <div class="esqueleto" aria-hidden="true">
+            <div class="esq-card"></div><div class="esq-card"></div><div class="esq-card"></div><div class="esq-card"></div>
+        </div>
+        <div class="empty-state" hidden>
             <div class="empty-icon">📊</div>
             <p>Nenhuma planilha carregada no momento.</p>
             <span>Selecione o arquivo `.xlsx` do dia para gerar a visão de docas.</span>
         </div>
     </main>
+
+    <div class="legenda" aria-label="Legenda das cores">
+        <span><i style="background:#2563EB"></i>Doca ocupada</span>
+        <span><i style="background:#22C55E"></i>Livre ou finalizada</span>
+        <span><i style="background:#93C5FD"></i>Carregando</span>
+        <span><i style="background:#FCD34D"></i>Pausado</span>
+        <span><i style="background:#0F766E"></i>Com restrição</span>
+        <span><i style="background:#6D28D9"></i>Manutenção</span>
+        <span><i style="background:#64748B"></i>Bloqueada</span>
+    </div>
 
     </div>
 

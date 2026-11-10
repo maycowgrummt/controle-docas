@@ -56,6 +56,8 @@ let cancelarAssinatura = null;
 const registros = {}; // id do documento -> dados
 let statusDocas = {}; // doca -> { tipo, motivo, nome, t } das docas com algum status
 let totalCarregando = 0; // quantos clientes estão carregando agora (usado pelo auto-scroll)
+let leituraDoServidor = false; // já chegou a primeira leitura real do banco (não só a cópia do aparelho)
+let docasConcluidasAntes = null; // docas já concluídas na pintura anterior (para o brilho de "acabou")
 
 // ---------- Utilidades ----------
 const agora = () => Date.now() + offsetMs;
@@ -246,10 +248,30 @@ function pintarStatusDoca(card) {
   botao.classList.toggle("liberar", !!status);
 }
 
+// Número que conta até o valor novo (definido no app.js); sem ele, só troca o texto
+const mostrarNumero = (el, texto) => (window.mostrarNumero ? window.mostrarNumero(el, texto) : setTexto(el, texto));
+
+// TV: faixa das docas livres (montada pelo app.js). Pinta o status e conta só as que podem receber carga.
+function pintarFaixaLivres() {
+  const faixa = document.querySelector("#painel .livres-faixa");
+  if (!faixa) return;
+  let disponiveis = 0;
+  faixa.querySelectorAll(".chip-doca").forEach((chip) => {
+    const doca = chip.dataset.doca;
+    const tipo = statusDocas[doca]?.tipo || "";
+    Object.keys(TIPOS_STATUS_DOCA).forEach((t) => chip.classList.toggle(t, tipo === t));
+    const titulo = `Doca ${doca}: ${tipo ? TIPOS_STATUS_DOCA[tipo] : "livre"}`;
+    if (chip.title !== titulo) chip.title = titulo;
+    if (!docaIndisponivel(doca)) disponiveis++;
+  });
+  setTexto(faixa.querySelector(".livres-total"), String(disponiveis));
+}
+
 function aplicar() {
   if (!diaAtual) return;
   const t = agora();
   const cont = { carregando: 0, pausado: 0, concluido: 0, total: 0, volumeTotal: 0, volumeConcluido: 0 };
+  const concluidasAgora = new Set();
 
   document.querySelectorAll("#painel .card").forEach((card) => {
     pintarStatusDoca(card);
@@ -275,16 +297,27 @@ function aplicar() {
     if (prog) {
       const todas = concluidas === linhas.length;
       card.classList.toggle("doca-concluida", todas);
+      if (todas) {
+        concluidasAgora.add(card.dataset.doca);
+        // Brilho só quando a doca acabou de terminar (não ao abrir a página nem ao recarregar a planilha)
+        if (docasConcluidasAntes && !docasConcluidasAntes.has(card.dataset.doca)) {
+          card.classList.add("acabou");
+          setTimeout(() => card.classList.remove("acabou"), 1800);
+        }
+      }
       prog.classList.toggle("completo", todas);
       prog.querySelector(".barra i").style.width = `${(concluidas / linhas.length) * 100}%`;
       setTexto(prog.querySelector(".txt"), todas ? `✔ CONCLUÍDA (${concluidas} de ${linhas.length})` : `${concluidas} de ${linhas.length} ${linhas.length === 1 ? "concluído" : "concluídos"}`);
     }
   });
 
+  if (leituraDoServidor) docasConcluidasAntes = concluidasAgora;
+
   totalCarregando = cont.carregando;
-  setTexto(document.getElementById("kpi-carregando"), String(cont.carregando));
-  setTexto(document.getElementById("kpi-pausadas"), String(cont.pausado));
-  setTexto(document.getElementById("kpi-concluidas"), `${cont.concluido} / ${cont.total}`);
+  mostrarNumero(document.getElementById("kpi-carregando"), String(cont.carregando));
+  mostrarNumero(document.getElementById("kpi-pausadas"), String(cont.pausado));
+  mostrarNumero(document.getElementById("kpi-concluidas"), `${cont.concluido} / ${cont.total}`);
+  pintarFaixaLivres();
 
   document.getElementById("kpi-carregando").closest(".kpi-card").classList.toggle("kpi-carregando-ativo", cont.carregando > 0);
   document.getElementById("kpi-pausadas").closest(".kpi-card").classList.toggle("kpi-pausado-ativo", cont.pausado > 0);
@@ -569,7 +602,10 @@ function toast(msg) {
   el.className = "toast-cron";
   el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 5000);
+  setTimeout(() => {
+    el.classList.add("saindo"); // desliza para fora (cronometro.css)
+    setTimeout(() => el.remove(), 300);
+  }, 5000);
 }
 
 // ---------- Dados em tempo real ----------
@@ -585,6 +621,7 @@ function assinar() {
         if (ch.type === "removed") delete registros[ch.doc.id];
         else registros[ch.doc.id] = ch.doc.data();
       });
+      if (!snap.metadata?.fromCache) leituraDoServidor = true;
       aplicar();
     },
     (err) => {
