@@ -273,7 +273,7 @@ body.modo-operacao .cli-ctrl {
 
 .doca-progresso.completo { color: #15803D; }
 
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) {
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) {
     box-shadow: 0 0 0 3px #16A34A, 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -670,7 +670,7 @@ body.modo-operacao .doca-acoes {
     margin-bottom: 12px;
 }
 
-.doca-tipos label:last-child { flex-basis: 100%; }
+.doca-tipos label.largo { flex-basis: 100%; }
 
 .doca-tipos label {
     flex: 1;
@@ -901,28 +901,28 @@ body.modo-operacao .cli-motivos { grid-column: 1 / -1; }
     --status-critical: #2563EB;
 }
 
-.card.status-card-free:not(.doca-manutencao):not(.doca-bloqueada),
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) {
+.card.status-card-free:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento),
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) {
     background: #BBF7D0;
     border-color: var(--status-free);
 }
 
 /* A cor da faixa, do ponto e do volume vem escrita no próprio card (app.js),
    por isso a doca finalizada precisa do !important para virar verde */
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .card-stripe {
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) .card-stripe {
     background-color: var(--status-free) !important;
 }
 
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .status-dot {
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) .status-dot {
     background-color: var(--status-free) !important;
     box-shadow: 0 0 10px var(--status-free) !important;
 }
 
 /* Verde escuro para o texto continuar legível sobre o fundo verde */
-.card.status-card-free:not(.doca-manutencao):not(.doca-bloqueada) .total-valor,
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .total-topo,
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .total-valor,
-.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada) .doca-progresso.completo {
+.card.status-card-free:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) .total-valor,
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) .total-topo,
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) .total-valor,
+.card.doca-concluida:not(.doca-manutencao):not(.doca-bloqueada):not(.doca-faturamento) .doca-progresso.completo {
     color: #14532D !important;
 }
 /* ============================================================
@@ -1101,3 +1101,23 @@ body:not(.modo-operacao) .livres-faixa {
     .card, .card-stripe, .status-dot, .kpi-card, .total-topo, .cliente[data-doca], .chip-doca { transition: none; }
     .card.acabou, .card.entrando, .livres-faixa.entrando, .esq-card, .toast-cron, .toast-cron.saindo { animation: none; }
 }
+
+/* Concluído – aguardando faturamento: o card inteiro fica rosa até alguém clicar em Liberar.
+   As regras de verde acima ignoram esta doca (:not(.doca-faturamento)). */
+.card.doca-faturamento {
+    background: #FCE7F3;
+    border-color: #DB2777;
+}
+
+.doca-faturamento .doca-status { background: #BE185D; }
+
+.doca-faturamento .card-stripe,
+.doca-faturamento .status-dot {
+    background-color: #DB2777 !important;
+    box-shadow: none !important;
+}
+
+.doca-faturamento .total-topo,
+.doca-faturamento .total-valor { color: #9D174D !important; }
+
+.chip-doca.faturamento { background: #BE185D; color: #FFFFFF; }

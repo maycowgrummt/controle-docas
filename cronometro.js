@@ -40,7 +40,12 @@ const MOTIVOS_PAUSA = ["Empilhadeira", "Conferência", "Motorista", "Outro"];
 const CHAVE_OPERADORES = "darnel_operadores"; // nomes já usados neste aparelho (viram sugestões)
 const MAX_SUGESTOES = 20;
 const DOC_STATUS_DOCAS = "_docas"; // documento com as docas em manutenção, bloqueadas ou com restrição
-const TIPOS_STATUS_DOCA = { manutencao: "Manutenção", bloqueada: "Bloqueada", restricao: "Com restrição" };
+const TIPOS_STATUS_DOCA = {
+  manutencao: "Manutenção",
+  bloqueada: "Bloqueada",
+  restricao: "Com restrição",
+  faturamento: "Concluído – aguardando faturamento" // card fica rosa; Iniciar travado até Liberar
+};
 const TIPO_OPERANDO = "restricao"; // este status mostra o aviso, mas a doca continua operando
 
 
@@ -233,6 +238,7 @@ function pintarStatusDoca(card) {
   card.classList.toggle("doca-manutencao", status?.tipo === "manutencao");
   card.classList.toggle("doca-bloqueada", status?.tipo === "bloqueada");
   card.classList.toggle("doca-restricao", status?.tipo === "restricao");
+  card.classList.toggle("doca-faturamento", status?.tipo === "faturamento");
 
   const faixa = card.querySelector(".doca-status");
   faixa.hidden = !status;
@@ -544,7 +550,8 @@ async function indisponibilizarDoca(doca) {
       <div class="doca-tipos" role="radiogroup" aria-label="Situação da doca">
         <label><input type="radio" name="docaTipo" value="manutencao" checked> Manutenção</label>
         <label><input type="radio" name="docaTipo" value="bloqueada"> Bloqueada</label>
-        <label><input type="radio" name="docaTipo" value="restricao"> Com restrição (continua operando)</label>
+        <label class="largo"><input type="radio" name="docaTipo" value="restricao"> Com restrição (continua operando)</label>
+        <label class="largo"><input type="radio" name="docaTipo" value="faturamento"> Concluído – aguardando faturamento</label>
       </div>
       <label class="senha-rotulo" for="docaMotivo">Motivo (obrigatório em Com restrição)</label>
       <input id="docaMotivo" class="senha-campo campo-nome doca-motivo" type="text" maxlength="60" autocomplete="off">`,
