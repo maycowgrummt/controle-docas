@@ -353,7 +353,7 @@ function abrirMotivos(row) {
 // validar devolve a mensagem de erro, ou "" quando o texto estiver certo.
 let janelaAberta = false;
 
-function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "", sugestoes = [], extraHtml = "", capturar, validar }) {
+function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "", sugestoes = [], extraHtml = "", capturar, validar, validarExtra }) {
   if (janelaAberta) return Promise.resolve(null);
   janelaAberta = true;
 
@@ -391,13 +391,17 @@ function abrirJanela({ titulo, detalhe, rotulo, tipo, inputmode, classeCampo = "
       ev.preventDefault();
       const texto = campo.value.trim();
       const problema = validar(texto);
-      if (!problema) {
+      // Conferência dos campos extras (ex.: motivo da doca); ela mesma põe o foco no campo certo
+      const problemaExtra = problema ? "" : (validarExtra?.(fundo) || "");
+      if (!problema && !problemaExtra) {
         capturar?.(fundo);
         fechar(texto);
-      } else {
+      } else if (problema) {
         erro.textContent = problema;
         campo.value = "";
         campo.focus();
+      } else {
+        erro.textContent = problemaExtra;
       }
     });
     fundo.querySelector(".cancelar").addEventListener("click", () => fechar(null));
@@ -509,8 +513,17 @@ async function indisponibilizarDoca(doca) {
         <label><input type="radio" name="docaTipo" value="bloqueada"> Bloqueada</label>
         <label><input type="radio" name="docaTipo" value="restricao"> Com restrição (continua operando)</label>
       </div>
-      <label class="senha-rotulo" for="docaMotivo">Motivo (opcional)</label>
+      <label class="senha-rotulo" for="docaMotivo">Motivo (obrigatório em Com restrição)</label>
       <input id="docaMotivo" class="senha-campo campo-nome doca-motivo" type="text" maxlength="60" autocomplete="off">`,
+    validarExtra: (fundo) => {
+      const tipo = fundo.querySelector('input[name="docaTipo"]:checked').value;
+      const motivo = fundo.querySelector("#docaMotivo");
+      if (tipo === TIPO_OPERANDO && !/\p{L}/u.test(motivo.value)) {
+        motivo.focus();
+        return "Em Com restrição, escreva o motivo (ex.: nivelador lento).";
+      }
+      return "";
+    },
     capturar: (fundo) => {
       extras = {
         tipo: fundo.querySelector('input[name="docaTipo"]:checked').value,

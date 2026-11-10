@@ -152,8 +152,21 @@ const FUSO = "America/Sao_Paulo";
 const relogio = document.getElementById("relogio");
 const planilhaAtualizada = document.getElementById("planilhaAtualizada");
 
+// Planilha mostrada neste aparelho há mais tempo que isto fica destacada no cabeçalho
+const LIMITE_PLANILHA_ATRASADA_MIN = 150; // 2h30 (o time recarrega a cada 2 horas)
+let planilhaEm = null; // horário (ms) da planilha mostrada agora
+
+function marcarPlanilhaAtrasada() {
+  if (planilhaEm === null) return;
+  const atrasada = Date.now() - planilhaEm > LIMITE_PLANILHA_ATRASADA_MIN * 60000;
+  const limite = `${Math.floor(LIMITE_PLANILHA_ATRASADA_MIN / 60)}h${String(LIMITE_PLANILHA_ATRASADA_MIN % 60).padStart(2, "0")}`;
+  planilhaAtualizada.classList.toggle("atrasada", atrasada);
+  planilhaAtualizada.title = atrasada ? `Planilha sem recarga há mais de ${limite}. Carregue a nova ou atualize a página (F5).` : "";
+}
+
 function atualizarRelogio() {
   relogio.textContent = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: FUSO });
+  marcarPlanilhaAtrasada();
 }
 
 function mostrarPlanilhaAtualizada(iso) {
@@ -164,6 +177,8 @@ function mostrarPlanilhaAtualizada(iso) {
   planilhaAtualizada.textContent = dia(data) === dia(new Date())
     ? `Planilha atualizada às ${hora}`
     : `Planilha atualizada em ${dia(data)} às ${hora}`;
+  planilhaEm = data.getTime();
+  marcarPlanilhaAtrasada();
 }
 
 atualizarRelogio();

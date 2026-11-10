@@ -20,12 +20,18 @@
     gap: 10px;
 }
 
+/* O nome ocupa o espaço que precisa; se não couber, o tempo desce para a linha de baixo.
+   Só quebra no meio da palavra quando a palavra sozinha não cabe na linha, e aí com hífen. */
 .cli-nome {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
+    word-break: normal;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
 .cli-tempo {
+    margin-left: auto;
     font-variant-numeric: tabular-nums;
     font-weight: 800;
     font-size: 1.05rem;
@@ -808,6 +814,18 @@ header {
     font-weight: 500;
     color: #94A3B8;
 }
+
+/* Planilha sem recarga há mais de 2h30 (LIMITE_PLANILHA_ATRASADA_MIN no app.js) */
+.planilha-atualizada.atrasada {
+    margin-top: 2px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #FDE68A;
+    color: #78350F;
+    font-weight: 800;
+}
+
+.planilha-atualizada.atrasada::before { content: "⚠ "; }
 
 /* Cards brancos: a cor do status fica só na faixa, no ponto e no volume */
 .card.status-card-free,
